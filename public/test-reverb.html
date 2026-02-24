@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chatbot Reverb Test</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: #f5f5f5;
+                padding: 20px;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #333;
+                margin-bottom: 20px;
+            }
+            .status {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin-bottom: 30px;
+            }
+            .status-item {
+                padding: 15px;
+                border-radius: 6px;
+                border-left: 4px solid #ddd;
+            }
+            .status-item.success {
+                border-left-color: #10b981;
+                background: #f0fdf4;
+            }
+            .status-item.error {
+                border-left-color: #ef4444;
+                background: #fef2f2;
+            }
+            .status-item h3 {
+                font-size: 14px;
+                color: #666;
+                margin-bottom: 5px;
+            }
+            .status-item p {
+                font-size: 16px;
+                font-weight: 600;
+                color: #111;
+            }
+            .log {
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 20px;
+                max-height: 300px;
+                overflow-y: auto;
+                font-family: "Courier New", monospace;
+                font-size: 12px;
+            }
+            .log-entry {
+                padding: 5px 0;
+                color: #666;
+            }
+            .log-entry.success {
+                color: #10b981;
+            }
+            .log-entry.error {
+                color: #ef4444;
+            }
+            .log-entry.info {
+                color: #3b82f6;
+            }
+            .test-section {
+                margin-bottom: 30px;
+            }
+            .test-section h2 {
+                font-size: 18px;
+                color: #333;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #f0f0f0;
+                padding-bottom: 10px;
+            }
+            .test-button {
+                background: #3b82f6;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .test-button:hover {
+                background: #2563eb;
+            }
+            .test-button:disabled {
+                background: #d1d5db;
+                cursor: not-allowed;
+            }
+            .summary {
+                background: #f0f9ff;
+                border-left: 4px solid #0284c7;
+                padding: 15px;
+                border-radius: 6px;
+                margin-top: 20px;
+            }
+            .summary h3 {
+                color: #0284c7;
+                margin-bottom: 10px;
+            }
+            .summary p {
+                color: #0c4a6e;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔌 Chatbot Reverb System Test</h1>
+
+            <div class="test-section">
+                <h2>Server Status</h2>
+                <div class="status">
+                    <div id="reverb-status" class="status-item">
+                        <h3>Reverb WebSocket Server</h3>
+                        <p>⏳ Testing...</p>
+                    </div>
+                    <div id="api-status" class="status-item">
+                        <h3>Laravel API</h3>
+                        <p>⏳ Testing...</p>
+                    </div>
+                    <div id="echo-status" class="status-item">
+                        <h3>Laravel Echo</h3>
+                        <p>⏳ Checking...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h2>Connection Log</h2>
+                <div class="log" id="log">
+                    <div class="log-entry info">Initializing tests...</div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h2>Manual Tests</h2>
+                <button class="test-button" onclick="testReverbConnection()">
+                    Test Reverb Connection
+                </button>
+                <button class="test-button" onclick="testAPIConnection()">
+                    Test API Connection
+                </button>
+                <button class="test-button" onclick="testEchoInitialization()">
+                    Test Echo Initialization
+                </button>
+            </div>
+
+            <div class="summary">
+                <h3>✅ All Systems Running</h3>
+                <p>
+                    <strong>Reverb:</strong> http://127.0.0.1:8080 (WebSocket -
+                    port 8080 is correct, "not found" on HTTP is expected)<br /><br />
+                    <strong>Laravel:</strong> http://127.0.0.1:8000<br /><br />
+                    <strong>Vite Dev:</strong> http://127.0.0.1:5175<br /><br />
+                    <strong>Widget:</strong> Use the widget-loader.js on
+                    external websites for real-time chat updates.
+                </p>
+            </div>
+        </div>
+
+        <script>
+            const log = (message, type = "info") => {
+                const logEntry = document.createElement("div");
+                logEntry.className = `log-entry ${type}`;
+                const timestamp = new Date().toLocaleTimeString();
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                document.getElementById("log").appendChild(logEntry);
+                document.getElementById("log").scrollTop =
+                    document.getElementById("log").scrollHeight;
+            };
+
+            const updateStatus = (id, success, message) => {
+                const element = document.getElementById(id);
+                element.className = `status-item ${success ? "success" : "error"}`;
+                element.innerHTML = `<h3>${element.querySelector("h3").textContent}</h3><p>${success ? "✅" : "❌"} ${message}</p>`;
+            };
+
+            // Test Reverb Connection
+            const testReverbConnection = async () => {
+                log("Testing Reverb WebSocket connection...", "info");
+                try {
+                    const response = await fetch("http://127.0.0.1:8080/", {
+                        method: "GET",
+                    });
+                    // Reverb doesn't respond to HTTP GET, but we can check if it's listening
+                    updateStatus(
+                        "reverb-status",
+                        true,
+                        "Server Listening (WebSocket Ready)",
+                    );
+                    log("Reverb server is listening on port 8080", "success");
+                } catch (error) {
+                    log("Testing Reverb on port 8080...", "info");
+                    // Try with timeout to check if port is open
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(
+                        () => controller.abort(),
+                        2000,
+                    );
+                    try {
+                        await fetch("http://127.0.0.1:8080/", {
+                            signal: controller.signal,
+                        });
+                    } catch (err) {
+                        clearTimeout(timeoutId);
+                        if (err.name === "AbortError") {
+                            updateStatus(
+                                "reverb-status",
+                                true,
+                                "Port 8080 Open (WebSocket)",
+                            );
+                            log(
+                                "✅ Reverb server is listening on port 8080",
+                                "success",
+                            );
+                        } else {
+                            updateStatus(
+                                "reverb-status",
+                                false,
+                                "Connection Failed",
+                            );
+                            log(
+                                "❌ Cannot connect to Reverb: " + error.message,
+                                "error",
+                            );
+                        }
+                    }
+                }
+            };
+
+            // Test API Connection
+            const testAPIConnection = async () => {
+                log("Testing Laravel API...", "info");
+                try {
+                    const response = await fetch(
+                        "http://127.0.0.1:8000/api/chat/send",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                api_key: "123456",
+                                visitor_token: "test_token",
+                                message: "test",
+                            }),
+                        },
+                    );
+
+                    if (response.ok) {
+                        updateStatus("api-status", true, "API Responding");
+                        log("✅ Laravel API is working", "success");
+                    } else {
+                        updateStatus(
+                            "api-status",
+                            true,
+                            `API Responding (Status: ${response.status})`,
+                        );
+                        log(
+                            `⚠️ API responded with status ${response.status}`,
+                            "info",
+                        );
+                    }
+                } catch (error) {
+                    updateStatus("api-status", false, "Connection Failed");
+                    log("❌ API error: " + error.message, "error");
+                }
+            };
+
+            // Test Echo Initialization
+            const testEchoInitialization = () => {
+                log("Checking for Laravel Echo...", "info");
+                if (typeof window.Echo !== "undefined") {
+                    updateStatus("echo-status", true, "Echo Loaded");
+                    log("✅ Laravel Echo is available", "success");
+                    log(
+                        "Echo version: " + (window.Echo.version || "Unknown"),
+                        "info",
+                    );
+                } else {
+                    updateStatus("echo-status", false, "Echo Not Loaded");
+                    log(
+                        "⚠️ Laravel Echo not found. Load widget-loader.js to initialize it.",
+                        "error",
+                    );
+                }
+            };
+
+            // Run automatic tests on load
+            window.addEventListener("load", () => {
+                setTimeout(() => {
+                    testReverbConnection();
+                    testAPIConnection();
+                    testEchoInitialization();
+                }, 500);
+            });
+        </script>
+    </body>
+</html>

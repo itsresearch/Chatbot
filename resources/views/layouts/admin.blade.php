@@ -20,16 +20,27 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #ff7a18;
+            --primary-dark: #e8620b;
+            --primary-soft: #fff3e0;
+            --surface: #ffffff;
+            --border-subtle: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+        }
+
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
+            color: var(--text-main);
         }
 
         /* Sidebar Styles */
         .sidebar {
             height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff7a18 0%, #ff512f 100%);
             position: fixed;
             top: 0;
             left: 0;
@@ -72,7 +83,7 @@
 
         .navbar-brand {
             font-weight: 700;
-            color: #667eea;
+            color: var(--primary);
             font-size: 24px;
             margin-left: 280px;
         }
@@ -160,8 +171,8 @@
         }
 
         .stat-icon.bg-primary-light {
-            background-color: #e7f1ff;
-            color: #667eea;
+            background-color: var(--primary-soft);
+            color: var(--primary);
         }
 
         .stat-icon.bg-success-light {
@@ -234,13 +245,13 @@
         }
 
         .btn-primary {
-            background-color: #667eea;
-            color: white;
+            background-color: var(--primary);
+            color: #ffffff;
         }
 
         .btn-primary:hover {
-            background-color: #5568d3;
-            color: white;
+            background-color: var(--primary-dark);
+            color: #ffffff;
             transform: translateY(-2px);
         }
 
@@ -259,9 +270,9 @@
         }
 
         .search-input:focus {
-            background-color: white;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.12);
             outline: none;
         }
 
@@ -284,8 +295,8 @@
         }
 
         .chat-item.active {
-            background-color: #e7f1ff;
-            border-left: 4px solid #667eea;
+            background-color: var(--primary-soft);
+            border-left: 4px solid var(--primary);
             padding-left: 11px;
         }
 
@@ -371,8 +382,8 @@
         }
 
         .admin-message .message-content {
-            background-color: #667eea;
-            color: white;
+            background-color: var(--primary);
+            color: #ffffff;
         }
 
         .message-time {
@@ -400,8 +411,8 @@
 
         .chat-input-area input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.12);
         }
 
         /* Responsive */
@@ -546,7 +557,7 @@
                 </a>
             </li>
             <li>
-                <a href="#">
+                <a href="{{ route('admin.conversations') }}">
                     <i class="bi bi-chat-left-text"></i>
                     <span class="sidebar-text">Conversations</span>
                 </a>
