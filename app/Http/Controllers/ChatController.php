@@ -20,7 +20,10 @@ class ChatController extends Controller
         ]);
 
         //  Identify website
-        $website = Website::where('api_key', $request->api_key)->firstOrFail();
+        $website = Website::where('api_key', $request->api_key)->first();
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
 
         //  Identify visitor
         $visitor = Visitor::firstOrCreate([
@@ -49,23 +52,26 @@ class ChatController extends Controller
         //  Update last_message_at
         $conversation->update(['last_message_at' => now()]);
 
-        //  Intelligent bot logic (skip if admin took over)
-        if ($conversation->status !== 'human') {
-            $userMessage = strtolower($request->message);
-            $botReply = $this->generateBotReply($userMessage);
+        //  Only return newly created messages (not the entire history)
+        $newMessages = [$visitorMessage];
 
-            Message::create([
+        //  Bot replies only when admin hasn't taken over
+        if ($conversation->status !== 'human') {
+            $botReply = $this->generateBotReply(strtolower($request->message));
+
+            $botMessage = Message::create([
                 'conversation_id' => $conversation->id,
                 'sender_type' => 'bot',
                 'message' => $botReply
             ]);
-        }
 
-        $messages = $conversation->messages()->orderBy('created_at')->get();
+            $newMessages[] = $botMessage;
+        }
 
         return response()->json([
             'conversation_id' => $conversation->id,
-            'messages' => $messages
+            'messages' => $newMessages,
+            'status' => $conversation->status,
         ]);
     }
 
@@ -92,20 +98,7 @@ class ChatController extends Controller
             return 'You can reach our support team at support@company.com or call us at 1-800-123-4567. We\'re available Monday-Friday, 9AM-5PM EST.';
         }
 
-        // Pricing responses
-        if (preg_match('/\b(price|cost|pricing|free|paid|subscription|plan|how much)\b/i', $message)) {
-            return 'We offer flexible pricing plans to suit different needs. For detailed pricing information, please visit our website or contact our sales team.';
-        }
 
-        // Account/Login responses
-        if (preg_match('/\b(login|password|forgot|sign in|account|username|authentication)\b/i', $message)) {
-            return 'For account-related issues, you can reset your password using the "Forgot Password" link on the login page. If you need further assistance, our team is here to help!';
-        }
-
-        // Product/Feature questions
-        if (preg_match('/\b(feature|product|how to|tutorial|guide|documentation)\b/i', $message)) {
-            return 'I can help with that! Could you be more specific about which feature or product you\'d like to know more about?';
-        }
 
         // Gratitude responses
         if (preg_match('/\b(thanks|thank you|appreciate|grateful|good|great|perfect|awesome|excellent)\b/i', $message)) {
@@ -117,10 +110,6 @@ class ChatController extends Controller
             return 'We\'re available 24/7 to help! However, our support team responds during business hours (Mon-Fri, 9AM-5PM EST). Feel free to leave a message anytime!';
         }
 
-        // Complaint/Feedback
-        if (preg_match('/\b(complaint|complain|unhappy|disappointed|angry|bad|terrible|worst|issue)\b/i', $message)) {
-            return 'We\'re sorry to hear that you\'re having a bad experience. We take your feedback seriously. Could you tell us more details so we can help resolve this?';
-        }
 
         // Default response for unmatched messages
         $defaultResponses = [
@@ -136,7 +125,6 @@ class ChatController extends Controller
 
     public function fetchMessages(Request $request)
     {
-        // Validate input
         $request->validate([
             'api_key' => 'required|string',
             'visitor_token' => 'required|string',
@@ -144,30 +132,30 @@ class ChatController extends Controller
             'after_id' => 'sometimes|integer',
         ]);
 
-        // Identify website
-        $website = Website::where('api_key', $request->api_key)->firstOrFail();
+        $conversationId = (int) $request->conversation_id;
+        $afterId = (int) $request->input('after_id', 0);
 
-        // Identify visitor
-        $visitor = Visitor::where([
-            'visitor_token' => $request->visitor_token,
-            'website_id' => $website->id
-        ])->firstOrFail();
+        // Single join query validates ownership (1 query instead of 3)
+        $conversation = Conversation::query()
+            ->join('visitors', 'visitors.id', '=', 'conversations.visitor_id')
+            ->join('websites', 'websites.id', '=', 'conversations.website_id')
+            ->where('conversations.id', $conversationId)
+            ->where('visitors.visitor_token', $request->visitor_token)
+            ->where('websites.api_key', $request->api_key)
+            ->select('conversations.id', 'conversations.status')
+            ->first();
 
-        // Get conversation
-        $conversation = Conversation::where([
-            'id' => $request->conversation_id,
-            'visitor_id' => $visitor->id,
-            'website_id' => $website->id
-        ])->firstOrFail();
+        if (!$conversation) {
+            return response()->json(['messages' => [], 'status' => null]);
+        }
 
-        // Fetch messages after specified ID
-        $afterId = $request->input('after_id', 0);
-        $messages = $conversation->messages()
-            ->when($afterId > 0, function ($query) use ($afterId) {
-                $query->where('id', '>', $afterId);
-            })
-            ->orderBy('created_at')
-            ->get();
+        // Only fetch messages newer than what client already has
+        $messages = $afterId > 0
+            ? Message::where('conversation_id', $conversationId)
+                ->where('id', '>', $afterId)
+                ->orderBy('id')
+                ->get()
+            : collect();
 
         return response()->json([
             'messages' => $messages,

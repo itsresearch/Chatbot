@@ -6,27 +6,23 @@
     <!-- Page Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-1" style="color: #111827; font-weight: 700;">Chatbot Overview</h1>
-            <p class="text-muted mb-0">Clean, messaging‑style view of what your assistant is doing.</p>
+            <h1 class="h3 mb-1 fw-semibold text-light">Chatbot overview</h1>
+            <p class="mb-0" style="color: var(--text-muted);">Real-time view of conversations, load, and activity.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-sliders2 me-1"></i>Filters
-            </button>
-            <button class="btn btn-primary">
-                <i class="bi bi-download me-2"></i>Export Report
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
             </button>
         </div>
     </div>
 
     <!-- Statistics Cards Row -->
     <div class="row mb-4">
-        <!-- Total Conversations Card -->
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
                 <div style="flex: 1;">
-                    <div class="stat-number">1,248</div>
-                    <div class="stat-label">Total Conversations</div>
+                    <div class="stat-number">{{ $totalConversations }}</div>
+                    <div class="stat-label">Total conversations</div>
                 </div>
                 <div class="stat-icon bg-primary-light">
                     <i class="bi bi-chat-dots"></i>
@@ -34,133 +30,115 @@
             </div>
         </div>
 
-        <!-- Active Chats Card -->
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
                 <div style="flex: 1;">
-                    <div class="stat-number">24</div>
-                    <div class="stat-label">Active Chats</div>
+                    <div class="stat-number">{{ $humanConversations }}</div>
+                    <div class="stat-label">Handled by humans</div>
                 </div>
                 <div class="stat-icon bg-success-light">
-                    <i class="bi bi-circle-fill"></i>
+                    <i class="bi bi-person-check"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Closed Chats Card -->
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card">
                 <div style="flex: 1;">
-                    <div class="stat-number">892</div>
-                    <div class="stat-label">Closed Chats</div>
-                </div>
-                <div class="stat-icon bg-danger-light">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Visitors Today Card -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="stat-card">
-                <div style="flex: 1;">
-                    <div class="stat-number">632</div>
-                    <div class="stat-label">Visitors Today</div>
+                    <div class="stat-number">{{ $botConversations }}</div>
+                    <div class="stat-label">Handled by bot</div>
                 </div>
                 <div class="stat-icon bg-warning-light">
-                    <i class="bi bi-people"></i>
+                    <i class="bi bi-robot"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card">
+                <div style="flex: 1;">
+                    <div class="stat-number">{{ $messagesToday }}</div>
+                    <div class="stat-label">Messages today</div>
+                </div>
+                <div class="stat-icon bg-danger-light">
+                    <i class="bi bi-activity"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Recent Conversations Section -->
-    <div class="card">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="mb-0" style="color: #111827; font-weight: 600;">Recent conversations</h5>
-            <a href="{{ route('admin.conversations') }}"
-                style="color: var(--primary); text-decoration: none; font-weight: 500; font-size: 0.9rem;">
-                View all <i class="bi bi-arrow-right-short"></i>
+    <div class="card p-0">
+        <div class="d-flex align-items-center justify-content-between px-3 px-md-4 pt-3 pb-2 border-bottom"
+            style="border-color: #020617 !important;">
+            <div>
+                <h5 class="mb-1 text-light fw-semibold">Recent conversations</h5>
+                <small style="color: var(--text-muted);">
+                    Last {{ $recentConversations->count() }} active threads
+                </small>
+            </div>
+            <a href="{{ route('admin.conversations') }}" class="text-decoration-none"
+                style="color: var(--primary); font-weight: 500; font-size: 0.9rem;">
+                Open inbox <i class="bi bi-arrow-right-short"></i>
             </a>
         </div>
 
-        <div class="chat-list">
-            <!-- Example conversation rows (replace with dynamic data later if needed) -->
-            <div class="chat-item active">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 999px; background: var(--primary-soft); display:flex; align-items:center; justify-content:center; margin-right:12px;">
-                            <i class="bi bi-person-fill" style="color: var(--primary);"></i>
+        <div class="chat-list" style="border-right: none;">
+            @forelse ($recentConversations as $conversation)
+                @php
+                    $lastMessage = $conversation->messages->sortBy('created_at')->last();
+                    $label = $conversation->visitor
+                        ? 'Visitor ' . substr($conversation->visitor->visitor_token, 0, 8)
+                        : 'Unknown visitor';
+                    $avatarName = urlencode($label);
+                    $isUnread =
+                        $conversation->last_message_at &&
+                        (!$conversation->admin_viewed_at ||
+                            $conversation->last_message_at > $conversation->admin_viewed_at);
+                @endphp
+                <a href="{{ route('admin.chat', $conversation) }}" class="chat-item d-flex align-items-center"
+                    style="text-decoration: none;">
+                    <img src="https://ui-avatars.com/api/?name={{ $avatarName }}&background=020617&color=f97316&size=64"
+                        alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="chat-item-name {{ $isUnread ? 'fw-bold' : '' }}">
+                                    {{ $label }}
+                                </div>
+                                @if ($isUnread)
+                                    <span class="badge rounded-pill"
+                                        style="background-color: rgba(249,115,22,0.18); color: #fed7aa; font-size: 0.7rem;">
+                                        New
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="chat-item-time">
+                                @if ($conversation->last_message_at)
+                                    {{ $conversation->last_message_at->diffForHumans() }}
+                                @else
+                                    —
+                                @endif
+                            </div>
                         </div>
-                        <div>
-                            <div class="chat-item-name">John Smith</div>
-                            <div class="chat-item-message">Can you help me with my order?</div>
+                        <div class="chat-item-message">
+                            @if ($lastMessage)
+                                {{ \Illuminate\Support\Str::limit($lastMessage->message, 70) }}
+                            @else
+                                <span style="color: var(--text-muted);">No messages yet</span>
+                            @endif
+                        </div>
+                        <div class="mt-1 small" style="color: var(--text-muted);">
+                            {{ $conversation->website->name ?? 'Unknown website' }}
+                            · {{ $conversation->messages->count() }} messages
                         </div>
                     </div>
-                    <div class="text-end">
-                        <div class="chat-item-time">Today · 2:45 PM</div>
-                        <span class="badge bg-success">Active</span>
-                    </div>
+                </a>
+            @empty
+                <div class="px-4 py-5 text-center" style="color: var(--text-muted);">
+                    No conversations yet. Once visitors start chatting, you will see them here.
                 </div>
-            </div>
-
-            <div class="chat-item">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 999px; background: #fef2f2; display:flex; align-items:center; justify-content:center; margin-right:12px;">
-                            <i class="bi bi-person-fill" style="color: #ef4444;"></i>
-                        </div>
-                        <div>
-                            <div class="chat-item-name">Sarah Johnson</div>
-                            <div class="chat-item-message">Thanks for your help!</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="chat-item-time">Today · 1:30 PM</div>
-                        <span class="badge bg-secondary">Closed</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-item">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 999px; background: #ecfeff; display:flex; align-items:center; justify-content:center; margin-right:12px;">
-                            <i class="bi bi-person-fill" style="color: #0ea5e9;"></i>
-                        </div>
-                        <div>
-                            <div class="chat-item-name">Mike Davis</div>
-                            <div class="chat-item-message">I need technical support.</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="chat-item-time">Today · 12:15 PM</div>
-                        <span class="badge bg-success">Active</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-item">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div
-                            style="width: 40px; height: 40px; border-radius: 999px; background: #ecfdf5; display:flex; align-items:center; justify-content:center; margin-right:12px;">
-                            <i class="bi bi-person-fill" style="color: #10b981;"></i>
-                        </div>
-                        <div>
-                            <div class="chat-item-name">Emma Wilson</div>
-                            <div class="chat-item-message">Product inquiry about pricing.</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="chat-item-time">Yesterday · 4:20 PM</div>
-                        <span class="badge bg-secondary">Closed</span>
-                    </div>
-                </div>
-            </div>
+            @endforelse
         </div>
     </div>
 @endsection

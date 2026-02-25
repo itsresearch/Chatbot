@@ -165,11 +165,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
       .cb-message-row {
         display: flex;
+        flex-direction: column;
         margin-bottom: 10px;
       }
 
       .cb-message-row.cb-message-user {
-        justify-content: flex-end;
+        align-items: flex-end;
+      }
+
+      .cb-message-row.cb-message-bot {
+        align-items: flex-start;
       }
 
       .cb-bubble {
@@ -387,7 +392,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function restoreMessageHistory() {
       const messages = loadStoredMessages();
       messages.forEach(msg => {
-        const type = msg.sender_type === "admin" ? "bot" : "user";
+        // visitor → "user" (right side), admin/bot → "bot" (left side)
+        const type = msg.sender_type === "visitor" ? "user" : "bot";
         displayMessage(type, msg.message, msg.created_at || msg.timestamp, msg.id || null);
         if (msg.id) {
           lastMessageId = Math.max(lastMessageId, msg.id);
@@ -395,21 +401,25 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
 
-    // Poll for new messages from admin
+    // Adaptive polling: fast when active, slows when idle to reduce server load
+    let pollDelay = 3000;
+    let pollIdleSince = Date.now();
+    const POLL_FAST = 3000;
+    const POLL_SLOW = 8000;
+    const POLL_IDLE_AFTER = 30000;
+    const MESSAGES_API_URL = SERVER_URL + "/api/chat/messages";
+
     function pollForMessages() {
         if (!conversationId) return;
-        
-        if (pollInterval) clearInterval(pollInterval);
-        
-        const MESSAGES_API_URL = SERVER_URL + "/api/chat/messages";
-        
-        pollInterval = setInterval(async () => {
+        stopPolling();
+        pollDelay = POLL_FAST;
+        pollIdleSince = Date.now();
+
+        async function doPoll() {
             try {
                 const response = await fetch(MESSAGES_API_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         api_key: API_KEY,
                         visitor_token: visitorToken,
@@ -417,34 +427,52 @@ document.addEventListener("DOMContentLoaded", function () {
                         after_id: lastMessageId,
                     }),
                 });
-
                 const data = await response.json();
+                let hasNew = false;
+
                 if (data && Array.isArray(data.messages) && data.messages.length > 0) {
-                  data.messages.forEach(msg => {
-                    // Process all messages - prevent duplicates by checking DOM
-                    if (msg.sender_type === "admin" && msg.id > lastMessageId) {
-                      const messageRow = messagesDiv.querySelector(
-                        `[data-message-id="${msg.id}"]`
-                      );
-                      if (!messageRow) {
-                        displayMessage("bot", msg.message, msg.created_at, msg.id);
-                        addMessageToStorage(msg.id, msg.sender_type, msg.message, msg.created_at);
-                      }
-                      lastMessageId = Math.max(lastMessageId, msg.id);
-                    }
-                  });
+                    data.messages.forEach(msg => {
+                        if (msg.sender_type === "admin" || msg.sender_type === "bot") {
+                            if (!messagesDiv.querySelector('[data-message-id="' + msg.id + '"]')) {
+                                displayMessage("bot", msg.message, msg.created_at, msg.id);
+                                addMessageToStorage(msg.id, msg.sender_type, msg.message, msg.created_at);
+                                hasNew = true;
+                            }
+                        }
+                        lastMessageId = Math.max(lastMessageId, msg.id);
+                    });
+                }
+
+                if (hasNew) {
+                    pollDelay = POLL_FAST;
+                    pollIdleSince = Date.now();
+                } else if (Date.now() - pollIdleSince > POLL_IDLE_AFTER) {
+                    pollDelay = Math.min(pollDelay + 1000, POLL_SLOW);
                 }
             } catch (error) {
                 console.error("Polling error:", error);
+                pollDelay = Math.min(pollDelay + 2000, POLL_SLOW);
             }
-        }, 2000); // Poll every 2 seconds
+
+            // Only schedule next if polling hasn't been stopped
+            if (pollInterval !== null) {
+                pollInterval = setTimeout(doPoll, pollDelay);
+            }
+        }
+
+        pollInterval = setTimeout(doPoll, pollDelay);
     }
 
     function stopPolling() {
         if (pollInterval) {
-            clearInterval(pollInterval);
+            clearTimeout(pollInterval);
             pollInterval = null;
         }
+    }
+
+    function resetPollSpeed() {
+        pollDelay = POLL_FAST;
+        pollIdleSince = Date.now();
     }
 
     function togglePanel(open) {
@@ -576,25 +604,29 @@ document.addEventListener("DOMContentLoaded", function () {
                 addMessageToStorage(msg.id, msg.sender_type, msg.message, msg.created_at);
               });
 
+              // Display any admin or bot messages not yet shown
+              data.messages.forEach(msg => {
+                if (msg.sender_type === "admin" || msg.sender_type === "bot") {
+                  const existing = messagesDiv.querySelector('[data-message-id="' + msg.id + '"]');
+                  if (!existing) {
+                    displayMessage("bot", msg.message, msg.created_at, msg.id);
+                  }
+                }
+              });
+
+              // Update lastMessageId to highest in conversation
               const maxId = Math.max(
                 lastMessageId,
                 ...data.messages.map(msg => msg.id || 0)
               );
               lastMessageId = maxId;
-
-              // Display bot response if there is one and it's not already shown
-              const botMessages = data.messages.filter(m => m.sender_type === "bot");
-              if (botMessages.length > 0) {
-                const latestBot = botMessages[botMessages.length - 1];
-                const existing = messagesDiv.querySelector(`[data-message-id="${latestBot.id}"]`);
-                if (!existing) {
-                  displayMessage("bot", latestBot.message, latestBot.created_at, latestBot.id);
-                }
-              }
-            } else {
-                // Fallback message
+            } else if (!data || !data.status || data.status !== "human") {
+                // Only show fallback if NOT in human mode and no messages returned
                 displayMessage("bot", "Thanks! I've received your message.", new Date().toISOString());
             }
+
+            // Speed up polling after sending
+            resetPollSpeed();
         } catch (error) {
             console.error("Error:", error);
             displayMessage("bot", "Sorry, something went wrong. Please try again.", new Date().toISOString());

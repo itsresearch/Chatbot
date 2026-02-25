@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Chatbot Admin') - Chatbot Admin Dashboard</title>
 
     <!-- Bootstrap 5 CDN -->
@@ -12,7 +13,8 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-    <!-- Custom Styles -->
+    <!-- Tailwind / Vite bundle (includes Echo) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
             margin: 0;
@@ -21,17 +23,19 @@
         }
 
         :root {
-            --primary: #ff7a18;
-            --primary-dark: #e8620b;
-            --primary-soft: #fff3e0;
-            --surface: #ffffff;
-            --border-subtle: #e5e7eb;
-            --text-main: #111827;
-            --text-muted: #6b7280;
+            --primary: #f97316;
+            --primary-dark: #ea580c;
+            --primary-soft: rgba(249, 115, 22, 0.12);
+            --surface: #020617;
+            --surface-elevated: #020617;
+            --surface-soft: #0b1120;
+            --border-subtle: #1f2937;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
         }
 
         body {
-            background-color: #f8f9fa;
+            background-color: #020617;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             color: var(--text-main);
@@ -40,7 +44,7 @@
         /* Sidebar Styles */
         .sidebar {
             height: 100vh;
-            background: linear-gradient(135deg, #ff7a18 0%, #ff512f 100%);
+            background: radial-gradient(circle at top, #0f172a 0%, #020617 55%, #000000 100%);
             position: fixed;
             top: 0;
             left: 0;
@@ -70,20 +74,20 @@
 
         /* Navbar Styles */
         .navbar {
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            background: rgba(15, 23, 42, 0.98);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
             padding: 15px 30px;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #0b1120;
         }
 
         .navbar-brand {
             font-weight: 700;
-            color: var(--primary);
+            color: #f9fafb;
             font-size: 24px;
             margin-left: 280px;
         }
@@ -135,8 +139,9 @@
 
         /* Cards */
         .card {
-            border: none;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.9);
+            background: radial-gradient(circle at top left, #0b1120 0%, #020617 55%, #000000 100%);
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
             border-radius: 12px;
             padding: 25px;
             transition: all 0.3s ease;
@@ -149,7 +154,7 @@
 
         /* Statistics Cards */
         .stat-card {
-            background: white;
+            background: linear-gradient(135deg, #020617 0%, #0b1120 60%, rgba(249, 115, 22, 0.08) 100%);
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 20px;
@@ -191,15 +196,15 @@
         }
 
         .stat-number {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: 700;
-            color: #1f2937;
+            color: #f9fafb;
             line-height: 1;
         }
 
         .stat-label {
-            font-size: 14px;
-            color: #6b7280;
+            font-size: 13px;
+            color: var(--text-muted);
             margin-top: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -207,23 +212,23 @@
 
         /* Table Styles */
         .table {
-            background: white;
+            background: #020617;
             border-radius: 12px;
             overflow: hidden;
         }
 
         .table thead {
-            background-color: #f3f4f6;
-            border-bottom: 2px solid #e5e7eb;
+            background-color: #020617;
+            border-bottom: 1px solid #111827;
         }
 
         .table-hover tbody tr:hover {
-            background-color: #f9fafb;
+            background-color: #020617;
         }
 
         .table td {
             vertical-align: middle;
-            border-color: #e5e7eb;
+            border-color: #111827;
             padding: 15px;
         }
 
@@ -245,7 +250,7 @@
         }
 
         .btn-primary {
-            background-color: var(--primary);
+            background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: #ffffff;
         }
 
@@ -262,15 +267,15 @@
 
         /* Search Input */
         .search-input {
-            background-color: #f3f4f6;
-            border: 1px solid #e5e7eb;
+            background-color: #020617;
+            border: 1px solid #111827;
             border-radius: 8px;
             padding: 10px 15px;
             transition: all 0.3s ease;
         }
 
         .search-input:focus {
-            background-color: #ffffff;
+            background-color: #020617;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.12);
             outline: none;
@@ -280,35 +285,35 @@
         .chat-list {
             height: calc(100vh - 200px);
             overflow-y: auto;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #020617;
         }
 
         .chat-item {
             padding: 15px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #020617;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .chat-item:hover {
-            background-color: #f9fafb;
+            background-color: rgba(15, 23, 42, 0.85);
         }
 
         .chat-item.active {
-            background-color: var(--primary-soft);
-            border-left: 4px solid var(--primary);
+            background-color: rgba(15, 23, 42, 0.95);
+            border-left: 3px solid var(--primary);
             padding-left: 11px;
         }
 
         .chat-item-name {
             font-weight: 600;
-            color: #1f2937;
+            color: #e5e7eb;
             margin-bottom: 5px;
         }
 
         .chat-item-message {
             font-size: 13px;
-            color: #6b7280;
+            color: var(--text-muted);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -316,7 +321,23 @@
 
         .chat-item-time {
             font-size: 12px;
-            color: #9ca3af;
+            color: #64748b;
+        }
+
+        /* Unread conversation highlight */
+        .chat-item.chat-item-unread {
+            background-color: rgba(249, 115, 22, 0.08);
+            border-left: 3px solid #f97316;
+            padding-left: 12px;
+        }
+
+        .chat-item.chat-item-unread:hover {
+            background-color: rgba(249, 115, 22, 0.15);
+        }
+
+        .chat-item.chat-item-unread .chat-item-time {
+            color: #f97316;
+            font-weight: 600;
         }
 
         /* Chat Window */
@@ -328,8 +349,8 @@
 
         .chat-header {
             padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            background: white;
+            border-bottom: 1px solid #020617;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, #020617 60%, rgba(249, 115, 22, 0.1) 100%);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -339,12 +360,13 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background: #f9fafb;
+            background: radial-gradient(circle at top, #020617 0%, #020617 55%, #000000 100%);
         }
 
         .message {
             margin-bottom: 15px;
             display: flex;
+            width: 100%;
             animation: slideIn 0.3s ease;
         }
 
@@ -369,50 +391,55 @@
         }
 
         .message-content {
+            display: inline-block;
             max-width: 60%;
+            min-width: 40px;
             padding: 12px 16px;
             border-radius: 12px;
             word-wrap: break-word;
+            white-space: normal;
         }
 
         .visitor-message .message-content {
-            background-color: white;
-            color: #1f2937;
-            border: 1px solid #e5e7eb;
+            background-color: #020617;
+            color: #e5e7eb;
+            border: 1px solid #111827;
         }
 
         .admin-message .message-content {
-            background-color: var(--primary);
+            background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: #ffffff;
         }
 
         .message-time {
             font-size: 11px;
-            color: #9ca3af;
+            color: #6b7280;
             margin-top: 5px;
         }
 
         /* Chat Input */
         .chat-input-area {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
+            background: #020617;
+            border-top: 1px solid #020617;
             display: flex;
             gap: 10px;
         }
 
         .chat-input-area input {
             flex: 1;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px 15px;
+            border: 1px solid #111827;
+            border-radius: 999px;
+            padding: 12px 18px;
             font-size: 14px;
+            background-color: #020617;
+            color: #e5e7eb;
         }
 
         .chat-input-area input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.12);
+            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
         }
 
         /* Responsive */
@@ -452,7 +479,7 @@
 
             .chat-list {
                 border-right: none;
-                border-bottom: 1px solid #e5e7eb;
+                border-bottom: 1px solid #020617;
                 height: auto;
                 max-height: 300px;
             }
@@ -486,15 +513,15 @@
 
 <body>
     <!-- TOP NAVBAR -->
-    <nav class="navbar">
+    <nav class="navbar text-light">
         <div class="d-flex align-items-center" style="width: 100%; justify-content: space-between;">
             <!-- Left Side: Brand & Toggle -->
             <div class="d-flex align-items-center">
-                <button class="btn btn-link text-dark d-none d-lg-block" id="sidebar-toggle"
+                <button class="btn btn-link text-light d-none d-lg-block" id="sidebar-toggle"
                     style="border: none; font-size: 24px;">
                     <i class="bi bi-list"></i>
                 </button>
-                <button class="btn btn-link text-dark d-lg-none" id="mobile-sidebar-toggle"
+                <button class="btn btn-link text-light d-lg-none" id="mobile-sidebar-toggle"
                     style="border: none; font-size: 24px;">
                     <i class="bi bi-list"></i>
                 </button>
@@ -509,15 +536,15 @@
                     <span class="input-group-text search-input" style="border: none;">
                         <i class="bi bi-search"></i>
                     </span>
-                    <input type="text" class="form-control search-input" placeholder="Search conversations..."
-                        style="border: none;">
+                    <input type="text" class="form-control search-input text-light"
+                        placeholder="Search conversations..." style="border: none; background: transparent;">
                 </div>
             </div>
 
             <!-- Right Side: Icons & Profile -->
             <div class="d-flex align-items-center gap-3">
                 <!-- Notification Icon -->
-                <button class="btn btn-link text-dark position-relative" style="font-size: 20px; border: none;">
+                <button class="btn btn-link text-light position-relative" style="font-size: 20px; border: none;">
                     <i class="bi bi-bell"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                         style="font-size: 10px;">
@@ -527,11 +554,11 @@
 
                 <!-- Profile Dropdown -->
                 <div class="dropdown">
-                    <button class="btn btn-link text-dark d-flex align-items-center gap-2" type="button"
+                    <button class="btn btn-link text-light d-flex align-items-center gap-2" type="button"
                         id="profileDropdown" data-bs-toggle="dropdown">
                         <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
                             alt="Admin" width="36" height="36" class="rounded-circle">
-                        <span class="d-none d-sm-inline text-dark" style="font-weight: 500;">Admin</span>
+                        <span class="d-none d-sm-inline text-light" style="font-weight: 500;">Admin</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
@@ -551,45 +578,17 @@
     <aside class="sidebar" id="sidebar">
         <ul class="sidebar-menu">
             <li>
-                <a href="#" class="active">
+                <a href="{{ route('admin.dashboard') }}"
+                    class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <i class="bi bi-house-door-fill"></i>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
             </li>
             <li>
-                <a href="{{ route('admin.conversations') }}">
+                <a href="{{ route('admin.conversations') }}"
+                    class="{{ request()->routeIs('admin.conversations') || request()->routeIs('admin.chat') ? 'active' : '' }}">
                     <i class="bi bi-chat-left-text"></i>
                     <span class="sidebar-text">Conversations</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="bi bi-circle-fill" style="font-size: 10px;"></i>
-                    <span class="sidebar-text">Active Chats</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <span class="sidebar-text">Closed Chats</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="bi bi-graph-up"></i>
-                    <span class="sidebar-text">Analytics</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="bi bi-gear-fill"></i>
-                    <span class="sidebar-text">Settings</span>
-                </a>
-            </li>
-            <li style="margin-top: 30px; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                <a href="#" style="color: rgba(255, 255, 255, 0.8);">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span class="sidebar-text">Logout</span>
                 </a>
             </li>
         </ul>

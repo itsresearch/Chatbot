@@ -15,16 +15,17 @@
             <div class="col d-flex align-items-center justify-content-between">
                 <div>
                     <div class="d-flex align-items-center mb-1">
-                        <a href="{{ route('admin.conversations') }}" class="text-decoration-none text-muted me-2">
+                        <a href="{{ route('admin.conversations') }}" class="text-decoration-none me-2"
+                            style="color: var(--text-muted);">
                             <i class="bi bi-arrow-left-circle"></i>
                         </a>
-                        <h1 class="h4 mb-0">Conversations</h1>
+                        <h1 class="h4 mb-0 text-light">Conversations</h1>
                     </div>
-                    <small class="text-muted">Clean, messaging-style inbox for all visitors.</small>
+                    <small style="color: var(--text-muted);">Dark, messaging-style inbox for all visitors.</small>
                 </div>
                 <div>
-                    <span data-status-badge
-                        class="badge rounded-pill {{ $conversation->status === 'human' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-success-subtle text-success-emphasis' }}">
+                    <span data-status-badge class="badge rounded-pill"
+                        style="background-color: rgba(34,197,94,0.12); color: #bbf7d0;">
                         {{ $conversation->status === 'human' ? 'Human' : 'Bot' }}
                     </span>
                 </div>
@@ -35,23 +36,24 @@
             <!-- People / conversation list -->
             <div class="col-lg-4">
                 <div class="card p-0" style="height: calc(100vh - 150px); overflow: hidden;">
-                    <div class="d-flex align-items-center justify-content-between px-3 py-3 border-bottom">
+                    <div class="d-flex align-items-center justify-content-between px-3 py-3 border-bottom"
+                        style="border-color: #020617 !important;">
                         <div>
-                            <h6 class="mb-0">People</h6>
-                            <small class="text-muted">Select a visitor to view chat</small>
+                            <h6 class="mb-0 text-light">Inbox</h6>
+                            <small style="color: var(--text-muted);">Select a visitor to view chat</small>
                         </div>
-                        <span class="badge bg-light text-muted">
+                        <span class="badge" style="background-color: rgba(15,23,42,0.9); color: var(--text-muted);">
                             {{ $conversations->count() }} total
                         </span>
                     </div>
 
-                    <div class="px-3 pt-2 pb-3 border-bottom">
+                    <div class="px-3 pt-2 pb-3 border-bottom" style="border-color: #020617 !important;">
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-0">
-                                <i class="bi bi-search text-muted"></i>
+                            <span class="input-group-text search-input border-0">
+                                <i class="bi bi-search" style="color: var(--text-muted);"></i>
                             </span>
-                            <input type="text" class="form-control border-0 search-input" placeholder="Search people..."
-                                id="conversation-search">
+                            <input type="text" class="form-control border-0 search-input text-light"
+                                placeholder="Search people..." id="conversation-search">
                         </div>
                     </div>
 
@@ -61,18 +63,26 @@
                                 $isActive = $conv->id === $conversation->id;
                                 $label = $conv->visitor
                                     ? 'Visitor ' . substr($conv->visitor->visitor_token, 0, 8)
-                                    : 'Unknown visitor';
-                                $avatarName = urlencode($label);
+                                    : null;
+                                $avatarName = urlencode($label ?? 'V');
                                 $lastMessage = $conv->messages->sortBy('created_at')->last();
+                                $hasVisitorMessage = $lastMessage && $lastMessage->sender_type === 'visitor';
+                                $isUnread =
+                                    $hasVisitorMessage &&
+                                    $conv->last_message_at &&
+                                    (!$conv->admin_viewed_at || $conv->last_message_at > $conv->admin_viewed_at);
                             @endphp
+                            @if (!$label)
+                                @continue
+                            @endif
                             <a href="{{ route('admin.chat', $conv) }}"
                                 class="chat-item d-flex align-items-center {{ $isActive ? 'active' : '' }}"
                                 data-visitor-label="{{ \Illuminate\Support\Str::lower($label) }}">
-                                <img src="https://ui-avatars.com/api/?name={{ $avatarName }}&background=E5E7EB&color=111827&size=64"
+                                <img src="https://ui-avatars.com/api/?name={{ $avatarName }}&background=020617&color=f97316&size=64"
                                     alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <div class="chat-item-name">
+                                        <div class="chat-item-name {{ $isUnread ? 'fw-bold' : '' }}">
                                             {{ $label }}
                                         </div>
                                         <div class="chat-item-time">
@@ -87,10 +97,10 @@
                                         @if ($lastMessage)
                                             {{ \Illuminate\Support\Str::limit($lastMessage->message, 50) }}
                                         @else
-                                            <span class="text-muted">No messages yet</span>
+                                            <span style="color: var(--text-muted);">No messages yet</span>
                                         @endif
                                     </div>
-                                    <div class="mt-1 small text-muted">
+                                    <div class="mt-1 small" style="color: var(--text-muted);">
                                         {{ $conv->website->name ?? 'Unknown website' }}
                                         · {{ $conv->messages->count() }} messages
                                     </div>
@@ -110,24 +120,24 @@
                 <div class="card p-0 chat-window">
                     <div class="chat-header">
                         <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name={{ $activeAvatarName }}&background=FFEDD5&color=7C2D12&size=64"
+                            <img src="https://ui-avatars.com/api/?name={{ $activeAvatarName }}&background=020617&color=f97316&size=64"
                                 alt="Visitor" width="40" height="40" class="rounded-circle me-2">
                             <div>
-                                <div class="fw-semibold">
+                                <div class="fw-semibold text-light">
                                     {{ $activeVisitorLabel }}
                                 </div>
-                                <small class="text-muted">
+                                <small style="color: var(--text-muted);">
                                     {{ $conversation->website->name ?? 'Unknown website' }}
                                     · Started {{ $conversation->created_at->format('M d, Y H:i') }}
                                 </small>
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="small text-muted">
+                            <div class="small" style="color: var(--text-muted);">
                                 Last message:
                                 {{ $conversation->last_message_at?->diffForHumans() ?? 'N/A' }}
                             </div>
-                            <div class="small text-muted">
+                            <div class="small" style="color: var(--text-muted);">
                                 #{{ $conversation->id }} · {{ $conversation->messages->count() }} messages
                             </div>
                         </div>
@@ -141,8 +151,8 @@
                             @endphp
                             <div class="message {{ $isVisitor ? 'visitor-message' : 'admin-message' }}"
                                 data-message-id="{{ $message->id }}">
-                                <div>
-                                    <div class="message-content">
+                                <div style="max-width: 60%; min-width: 40px;">
+                                    <div class="message-content" style="max-width: 100%;">
                                         {{ $message->message }}
                                     </div>
                                     <div class="message-time">
@@ -162,8 +172,8 @@
                     <div class="chat-input-area">
                         <form id="admin-send-form" class="w-100 d-flex gap-2">
                             @csrf
-                            <input id="admin-message-input" name="message" type="text"
-                                class="form-control" placeholder="Type your reply…" autocomplete="off" />
+                            <input id="admin-message-input" name="message" type="text" class="form-control"
+                                placeholder="Type your reply…" autocomplete="off" />
                             <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center">
                                 <span class="me-1">Send</span>
                                 <i class="bi bi-send"></i>
@@ -209,7 +219,8 @@
                 const isHuman = status === 'human';
                 statusBadges.forEach(function(badge) {
                     badge.textContent = isHuman ? 'Human' : 'Bot';
-                    badge.classList.remove('bg-warning-subtle', 'text-warning-emphasis', 'bg-success-subtle',
+                    badge.classList.remove('bg-warning-subtle', 'text-warning-emphasis',
+                        'bg-success-subtle',
                         'text-success-emphasis');
                     if (isHuman) {
                         badge.classList.add('bg-warning-subtle', 'text-warning-emphasis');
@@ -244,6 +255,7 @@
 
                 const bubble = document.createElement('div');
                 bubble.className = 'message-content';
+                bubble.style.maxWidth = '100%';
                 bubble.textContent = message.message;
 
                 const meta = document.createElement('div');
@@ -251,6 +263,8 @@
                 meta.textContent = formatTime(message.created_at) + ' · ' + (isVisitor ? 'Visitor' : (isAdmin ?
                     'You' : 'Bot'));
 
+                inner.style.maxWidth = '60%';
+                inner.style.minWidth = '40px';
                 inner.appendChild(bubble);
                 inner.appendChild(meta);
                 wrapper.appendChild(inner);
@@ -274,7 +288,12 @@
                     }
 
                     if (Array.isArray(data.messages)) {
-                        data.messages.forEach(appendMessage);
+                        data.messages.forEach(msg => {
+                            // Prevent duplicates - skip if already in DOM
+                            if (!messagesEl.querySelector('[data-message-id="' + msg.id + '"]')) {
+                                appendMessage(msg);
+                            }
+                        });
                     }
                 } catch (error) {
                     console.error('Polling error:', error);
@@ -304,18 +323,147 @@
 
                     const data = await response.json();
                     if (data.message) {
-                        appendMessage(data.message);
+                        // Prevent duplicate if poll already rendered this message
+                        if (!messagesEl.querySelector('[data-message-id="' + data.message.id + '"]')) {
+                            appendMessage(data.message);
+                        }
                     }
                     if (data.status) {
                         setStatusBadge(data.status);
                     }
+                    // Speed up polling after sending
+                    pollDelay = 3000;
+                    pollIdleSince = Date.now();
+                    // Refresh sidebar to show updated preview
+                    refreshSidebar();
                 } catch (error) {
                     console.error('Send error:', error);
                 }
             });
 
-            // Faster polling so admin and widget stay in sync
-            setInterval(fetchMessages, 2000);
+            // Adaptive polling: fast when active, slows when idle
+            let pollDelay = 3000;
+            let pollIdleSince = Date.now();
+            let pollTimer = null;
+
+            async function doPoll() {
+                const prevId = lastMessageId;
+                await fetchMessages();
+                if (lastMessageId > prevId) {
+                    pollDelay = 3000;
+                    pollIdleSince = Date.now();
+                } else if (Date.now() - pollIdleSince > 30000) {
+                    pollDelay = Math.min(pollDelay + 1000, 8000);
+                }
+                pollTimer = setTimeout(doPoll, pollDelay);
+            }
+
+            pollTimer = setTimeout(doPoll, pollDelay);
+
+            window.addEventListener('beforeunload', function() {
+                if (pollTimer) clearTimeout(pollTimer);
+                if (sidebarTimer) clearTimeout(sidebarTimer);
+            });
+
+            // ── Sidebar live-refresh ──────────────────────────────
+            const conversationList = document.getElementById('conversation-list');
+            const totalBadge = conversationList ?
+                conversationList.closest('.card')?.querySelector('.badge') :
+                null;
+            const activeConversationId = {{ $conversation->id }};
+            let sidebarTimer = null;
+            let sidebarDelay = 5000;
+
+            function buildConversationItem(conv) {
+                const isActive = conv.id === activeConversationId;
+                const token = conv.visitor_token || '';
+                const label = 'Visitor ' + token.substring(0, 8);
+                const avatarName = encodeURIComponent(label);
+                const unread = conv.is_unread && !isActive;
+
+                return `<a href="/admin/chat/${conv.id}"
+                    class="chat-item d-flex align-items-center ${isActive ? 'active' : ''} ${unread ? 'chat-item-unread' : ''}"
+                    data-visitor-label="${label.toLowerCase()}"
+                    data-conversation-id="${conv.id}">
+                    <img src="https://ui-avatars.com/api/?name=${avatarName}&background=020617&color=f97316&size=64"
+                        alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="chat-item-name ${unread ? 'fw-bold text-white' : ''}">
+                                ${label}
+                                ${unread ? '<span class="ms-2 badge bg-warning text-dark" style="font-size:9px;">NEW</span>' : ''}
+                            </div>
+                            <div class="chat-item-time">
+                                ${conv.last_message_at_time || '—'}
+                            </div>
+                        </div>
+                        <div class="chat-item-message ${unread ? 'fw-semibold text-light' : ''}">
+                            ${conv.last_message ? conv.last_message : '<span style="color:var(--text-muted);">No messages yet</span>'}
+                        </div>
+                        <div class="mt-1 small" style="color: var(--text-muted);">
+                            ${conv.website_name} · ${conv.message_count} messages
+                        </div>
+                    </div>
+                </a>`;
+            }
+
+            async function refreshSidebar() {
+                try {
+                    const res = await fetch("{{ route('admin.conversations.list') }}", {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const conversations = await res.json();
+
+                    if (!Array.isArray(conversations)) return;
+
+                    // Update total badge
+                    if (totalBadge) {
+                        totalBadge.textContent = conversations.length + ' total';
+                    }
+
+                    // Preserve search filter
+                    const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+                    // Rebuild the list
+                    conversationList.innerHTML = conversations.length === 0 ?
+                        '<div class="px-3 py-4 text-center text-muted small">No conversations yet.</div>' :
+                        conversations.map(buildConversationItem).join('');
+
+                    // Re-apply search filter if active
+                    if (searchTerm) {
+                        conversationList.querySelectorAll('.chat-item').forEach(item => {
+                            const label = item.getAttribute('data-visitor-label') || '';
+                            item.style.display = label.includes(searchTerm) ? '' : 'none';
+                        });
+                    }
+                } catch (err) {
+                    console.error('Sidebar refresh error:', err);
+                }
+            }
+
+            async function doSidebarPoll() {
+                await refreshSidebar();
+                sidebarTimer = setTimeout(doSidebarPoll, sidebarDelay);
+            }
+
+            sidebarTimer = setTimeout(doSidebarPoll, sidebarDelay);
+
+            // Websocket updates via Laravel Echo (Reverb)
+            if (window.Echo) {
+                try {
+                    window.Echo.channel('chat.{{ $conversation->id }}')
+                        .listen('.MessageSent', (e) => {
+                            if (!e || !e.message) return;
+                            const msg = e.message;
+                            if (msg.id && msg.id <= lastMessageId) return;
+                            appendMessage(msg);
+                        });
+                } catch (err) {
+                    console.error('Echo subscribe error:', err);
+                }
+            }
         });
     </script>
 @endsection

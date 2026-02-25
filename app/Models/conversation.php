@@ -9,10 +9,11 @@ class Conversation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['website_id', 'visitor_id', 'status', 'last_message_at'];
+    protected $fillable = ['website_id', 'visitor_id', 'status', 'last_message_at', 'admin_viewed_at'];
 
     protected $casts = [
         'last_message_at' => 'datetime',
+        'admin_viewed_at' => 'datetime',
     ];
 
     public function website()
