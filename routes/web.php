@@ -3,9 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\ConversationController;
-use App\Models\Conversation;
-use App\Models\Message;
-
+use App\Http\Controllers\Admin\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,45 +14,28 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
+
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
-    
-    // Admin Dashboard Routes
-    Route::redirect('/admin', '/admin/dashboard');
-    
-    Route::get('/admin/dashboard', function () {
-        $totalConversations = Conversation::count();
-        $humanConversations = Conversation::where('status', 'human')->count();
-        $botConversations = Conversation::where('status', 'bot')->count();
 
-        $today = now()->startOfDay();
-        $messagesToday = Message::where('created_at', '>=', $today)->count();
+    Route::prefix('admin')->as('admin.')->group(function () {
+            Route::redirect('/', '/admin/dashboard');
 
-        $recentConversations = Conversation::with(['visitor', 'website', 'messages' => function ($query) {
-            $query->latest();
-        }])
-            ->orderByDesc('last_message_at')
-            ->orderByDesc('updated_at')
-            ->limit(6)
-            ->get();
+            Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            
+            Route::controller(ConversationController::class)->group(function () {
 
-        return view('admin.dashboard', compact(
-            'totalConversations',
-            'humanConversations',
-            'botConversations',
-            'messagesToday',
-            'recentConversations'
-        ));
-    })->name('admin.dashboard');
-    
-    Route::get('/admin/conversations', [ConversationController::class, 'index'])->name('admin.conversations');
-    Route::get('/admin/conversations/list', [ConversationController::class, 'conversationsList'])->name('admin.conversations.list');
-    
-    Route::get('/admin/chat/{conversation}', [ConversationController::class, 'show'])->name('admin.chat');
-    Route::get('/admin/chat/{conversation}/content', [ConversationController::class, 'chatContent'])->name('admin.chat.content');
-    Route::post('/admin/chat/{conversation}/mark-viewed', [ConversationController::class, 'markViewed'])->name('admin.chat.mark-viewed');
-    Route::get('/admin/chat/{conversation}/messages', [ConversationController::class, 'messages'])->name('admin.chat.messages');
-    Route::post('/admin/chat/{conversation}/send', [ConversationController::class, 'send'])->name('admin.chat.send');
+                Route::get('conversations', 'index')->name('conversations');
+                Route::get('conversations/list', 'conversationsList')->name('conversations.list');
+
+                Route::get('chat/{conversation}', 'show')->name('chat');
+                Route::get('chat/{conversation}/content', 'chatContent')->name('chat.content');
+                Route::post('chat/{conversation}/mark-viewed', 'markViewed')->name('chat.mark-viewed');
+                Route::get('chat/{conversation}/messages', 'messages')->name('chat.messages');
+                Route::post('chat/{conversation}/send', 'send')->name('chat.send');
+            });
+
+        });
+
 });
-

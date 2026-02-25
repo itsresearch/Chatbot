@@ -1,6 +1,6 @@
 /**
  * Chatbot Widget Loader
- * This script initializes Laravel Echo and loads the chat widget
+ * This script loads the chat widget
  * 
  * Usage:
  * <script>
@@ -18,49 +18,11 @@
     // Configuration
     const SERVER_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.serverUrl) || 'http://127.0.0.1:8000';
     
-    // Load Laravel Echo and Pusher
-    function loadEcho() {
-        // Check if Echo is already loaded
-        if (window.Echo) {
-            console.log('Laravel Echo already loaded');
-            loadChatWidget();
-            return;
-        }
-
-        // Create a promise-based loading system
-        Promise.all([
-            loadScript(SERVER_URL + '/js/app.js', 'module'),
-        ]).then(() => {
-            // Wait for Echo to be initialized
-            const checkEcho = setInterval(() => {
-                if (window.Echo) {
-                    clearInterval(checkEcho);
-                    console.log('Laravel Echo initialized successfully');
-                    loadChatWidget();
-                }
-            }, 100);
-            
-            // Timeout after 5 seconds
-            setTimeout(() => {
-                clearInterval(checkEcho);
-                if (!window.Echo) {
-                    console.warn('Laravel Echo failed to initialize, loading chat widget anyway');
-                    loadChatWidget();
-                }
-            }, 5000);
-        }).catch((error) => {
-            console.error('Failed to load Laravel Echo:', error);
-            console.log('Loading chat widget without real-time features');
-            loadChatWidget();
-        });
-    }
-
     // Load a script dynamically
-    function loadScript(src, type = 'text/javascript') {
+    function loadScript(src) {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = src;
-            script.type = type;
             script.async = true;
             
             script.onload = () => resolve(script);
@@ -74,15 +36,23 @@
     function loadChatWidget() {
         loadScript(SERVER_URL + '/widget/chat-widget.js').then(() => {
             console.log('Chat widget loaded successfully');
+            // If DOMContentLoaded already fired, manually trigger widget init
+            if (document.readyState !== 'loading') {
+                // The widget listens for DOMContentLoaded, but it already fired
+                // Dispatch a custom event or directly call init if needed
+                if (window.ChatbotWidget && typeof window.ChatbotWidget.init === 'function') {
+                    window.ChatbotWidget.init();
+                }
+            }
         }).catch((error) => {
             console.error('Failed to load chat widget:', error);
         });
     }
 
-    // Start loading when DOM is ready
+    // Start loading when DOM is ready or immediately if already ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadEcho);
+        document.addEventListener('DOMContentLoaded', loadChatWidget);
     } else {
-        loadEcho();
+        loadChatWidget();
     }
 })();

@@ -7,6 +7,7 @@ use App\Models\Website;
 use App\Models\Visitor;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Events\MessageSent;
 
 class ChatController extends Controller
 {
@@ -49,6 +50,9 @@ class ChatController extends Controller
             'message' => $request->message
         ]);
 
+        //  Broadcast visitor message
+        broadcast(new MessageSent($visitorMessage));
+
         //  Update last_message_at
         $conversation->update(['last_message_at' => now()]);
 
@@ -57,21 +61,29 @@ class ChatController extends Controller
 
         //  Bot replies only when admin hasn't taken over
         if ($conversation->status !== 'human') {
-            $botReply = $this->generateBotReply(strtolower($request->message));
+            $botResponse = $this->generateBotReply(strtolower($request->message));
 
             $botMessage = Message::create([
                 'conversation_id' => $conversation->id,
                 'sender_type' => 'bot',
-                'message' => $botReply
+                'message' => $botResponse['message']
             ]);
 
+            //  Broadcast bot message
+            broadcast(new MessageSent($botMessage));
+
             $newMessages[] = $botMessage;
+
+            // Redirect to human agent if bot doesn't have a specific answer
+            if ($botResponse['redirect_to_human']) {
+                $conversation->update(['status' => 'human']);
+            }
         }
 
         return response()->json([
             'conversation_id' => $conversation->id,
             'messages' => $newMessages,
-            'status' => $conversation->status,
+            'status' => $conversation->fresh()->status,
         ]);
     }
 
@@ -85,42 +97,43 @@ class ChatController extends Controller
                 'Hi! Thanks for reaching out. What can we do for you?',
                 'Greetings! How may I be of service?',
             ];
-            return $greetings[array_rand($greetings)];
+            return ['message' => $greetings[array_rand($greetings)], 'redirect_to_human' => false];
         }
 
         // Help/Support responses
         if (preg_match('/\b(help|support|assist|issue|problem|error|bug|not working)\b/i', $message)) {
-            return 'I\'d be happy to help! Could you please describe the issue you\'re facing? I\'ll do my best to assist you.';
+            return ['message' => 'I\'d be happy to help! Could you please describe the issue you\'re facing? I\'ll do my best to assist you.', 'redirect_to_human' => false];
         }
 
         // Contact/Information responses
         if (preg_match('/\b(contact|email|phone|call|reach|get in touch|information|address)\b/i', $message)) {
-            return 'You can reach our support team at support@company.com or call us at 1-800-123-4567. We\'re available Monday-Friday, 9AM-5PM EST.';
+            return ['message' => 'You can reach our support team at support@company.com or call us at 1-800-123-4567. We\'re available Monday-Friday, 9AM-5PM EST.', 'redirect_to_human' => false];
         }
-
-
 
         // Gratitude responses
         if (preg_match('/\b(thanks|thank you|appreciate|grateful|good|great|perfect|awesome|excellent)\b/i', $message)) {
-            return 'You\'re welcome! 😊 Is there anything else I can help you with?';
+            return ['message' => 'You\'re welcome! 😊 Is there anything else I can help you with?', 'redirect_to_human' => false];
         }
 
         // Availability/Hours
         if (preg_match('/\b(when|available|hours|open|schedule|timing)\b/i', $message)) {
-            return 'We\'re available 24/7 to help! However, our support team responds during business hours (Mon-Fri, 9AM-5PM EST). Feel free to leave a message anytime!';
+            return ['message' => 'We\'re available 24/7 to help! However, our support team responds during business hours (Mon-Fri, 9AM-5PM EST). Feel free to leave a message anytime!', 'redirect_to_human' => false];
         }
 
+        // Goodbye responses
+        if (preg_match('/\b(bye|goodbye|see you|take care|later)\b/i', $message)) {
+            return ['message' => 'Goodbye! 👋 Feel free to reach out anytime you need help. Take care!', 'redirect_to_human' => false];
+        }
 
-        // Default response for unmatched messages
-        $defaultResponses = [
-            'I understand! Let me help you with that. Could you provide more details?',
-            'That\'s a great question! What specifically would you like to know?',
-            'I\'m here to help! Can you tell me more about what you need?',
-            'Thanks for your message. How can I best assist you?',
-            'Got it! Let me know how I can be of service.',
+        // Bot doesn't have a specific answer - redirect to human agent
+        $redirectResponses = [
+            'I appreciate your question! Let me connect you with a human agent who can better assist you. Please hold on... 🙋',
+            'That\'s a great question that requires human expertise. I\'m redirecting you to one of our support agents. They\'ll be with you shortly!',
+            'I want to make sure you get the best help possible. Let me transfer you to a human agent who can assist you further. 🤝',
+            'This is beyond my capabilities. I\'m connecting you with a live support agent who will be able to help you better!',
         ];
 
-        return $defaultResponses[array_rand($defaultResponses)];
+        return ['message' => $redirectResponses[array_rand($redirectResponses)], 'redirect_to_human' => true];
     }
 
     public function fetchMessages(Request $request)

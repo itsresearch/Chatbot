@@ -1,5 +1,6 @@
 <!-- Chat Header -->
-<div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+<div style="background: var(--surface, #ffffff); border-bottom: 1px solid #f3e8de;"
+    class="px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-4">
         <div
             class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-lg font-bold text-white shadow-md">
@@ -32,14 +33,15 @@
 </div>
 
 <!-- Messages Container -->
-<div id="messages"
-    class="flex-1 overflow-y-auto px-6 py-4 bg-gradient-to-b from-gray-50 to-white space-y-4 scroll-smooth">
+<div id="messages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 scroll-smooth"
+    style="background: linear-gradient(180deg, #fef7f0 0%, #ffffff 40%, #fef7f0 100%);">
     @forelse ($conversation->messages as $message)
         @php
             $isVisitor = $message->sender_type === 'visitor';
             $isAdmin = $message->sender_type === 'admin';
         @endphp
-        <div class="flex {{ $isVisitor ? 'justify-start' : 'justify-end' }} group" data-message-id="{{ $message->id }}">
+        <div class="flex {{ $isVisitor ? 'justify-start' : 'justify-end' }} group"
+            data-message-id="{{ $message->id }}">
             <div class="flex items-end gap-3 {{ $isVisitor ? '' : 'flex-row-reverse' }} max-w-xs md:max-w-sm">
                 <div class="flex-shrink-0">
                     <div
@@ -49,11 +51,11 @@
                     </div>
                 </div>
                 <div class="flex flex-col {{ $isVisitor ? 'items-start' : 'items-end' }}">
-                    <div
-                        class="rounded-2xl px-4 py-3 shadow-sm
+                    <div class="px-4 py-3 shadow-sm
                         {{ $isVisitor
                             ? 'bg-white text-gray-900 border border-gray-200'
-                            : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' }}">
+                            : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' }}"
+                        style="border-radius: 20px; {{ $isVisitor ? 'border-bottom-left-radius: 6px;' : 'border-bottom-right-radius: 6px;' }}">
                         <p class="text-sm leading-relaxed break-words">{{ $message->message }}</p>
                     </div>
                     <div
@@ -82,7 +84,7 @@
 </div>
 
 <!-- Message Input -->
-<div class="border-t border-gray-100 bg-white px-6 py-4">
+<div style="border-top: 1px solid #f3e8de; background: var(--surface, #ffffff);" class="px-6 py-4">
     <form id="admin-send-form" class="space-y-3">
         @csrf
         <div class="flex gap-3 items-end">
@@ -187,9 +189,15 @@
 
             const bubble = document.createElement('div');
             bubble.className =
-                'rounded-2xl px-4 py-3 shadow-sm ' +
+                'px-4 py-3 shadow-sm ' +
                 (isVisitor ? 'bg-white text-gray-900 border border-gray-200' :
                     'bg-gradient-to-br from-orange-500 to-orange-600 text-white');
+            bubble.style.borderRadius = '20px';
+            if (isVisitor) {
+                bubble.style.borderBottomLeftRadius = '6px';
+            } else {
+                bubble.style.borderBottomRightRadius = '6px';
+            }
 
             const text = document.createElement('p');
             text.className = 'text-sm leading-relaxed break-words';
@@ -283,25 +291,48 @@
         let pollIdleSince = Date.now();
         let pollTimer = null;
 
-        async function doPoll() {
-            // Stop if content was replaced (navigated to another conversation)
-            if (!document.contains(messagesEl)) return;
+        // ── WebSocket updates via Laravel Echo (Reverb) ──────
+        if (window.Echo) {
+            window.Echo.channel('chat.{{ $conversation->id }}')
+                .listen('.MessageSent', (e) => {
+                    if (e && e.message) {
+                        const msg = e.message;
+                        if (msg.id && msg.id <= lastMessageId) return;
 
-            const prevId = lastMessageId;
-            await fetchMessages();
-            if (lastMessageId > prevId) {
-                pollDelay = 3000;
-                pollIdleSince = Date.now();
-            } else if (Date.now() - pollIdleSince > 30000) {
-                pollDelay = Math.min(pollDelay + 1000, 8000);
+                        // Display new message from admin or bot
+                        if (msg.sender_type === 'admin' || msg.sender_type === 'bot') {
+                            const existing = messagesEl.querySelector('[data-message-id="' + msg.id + '"]');
+                            if (!existing) {
+                                appendMessage(msg);
+                            }
+                        }
+                    }
+                });
+        } else {
+            // Fallback to polling if Echo not available
+            async function doPoll() {
+                // Stop if content was replaced (navigated to another conversation)
+                if (!document.contains(messagesEl)) return;
+
+                const prevId = lastMessageId;
+                await fetchMessages();
+                if (lastMessageId > prevId) {
+                    pollDelay = 3000;
+                    pollIdleSince = Date.now();
+                } else if (Date.now() - pollIdleSince > 30000) {
+                    pollDelay = Math.min(pollDelay + 1000, 8000);
+                }
+                pollTimer = setTimeout(doPoll, pollDelay);
             }
+
             pollTimer = setTimeout(doPoll, pollDelay);
         }
 
-        pollTimer = setTimeout(doPoll, pollDelay);
-
         window.addEventListener('beforeunload', function() {
             if (pollTimer) clearTimeout(pollTimer);
+            if (window.Echo) {
+                window.Echo.leave('chat.{{ $conversation->id }}');
+            }
         });
     })();
 </script>

@@ -5,13 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Chatbot Admin') - Chatbot Admin Dashboard</title>
+    <title>@yield('title', 'Dashboard') - Miraai Admin</title>
 
     <!-- Bootstrap 5 CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind / Vite bundle (includes Echo) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -25,18 +29,27 @@
         :root {
             --primary: #f97316;
             --primary-dark: #ea580c;
-            --primary-soft: rgba(249, 115, 22, 0.12);
-            --surface: #020617;
-            --surface-elevated: #020617;
-            --surface-soft: #0b1120;
-            --border-subtle: #1f2937;
-            --text-main: #e5e7eb;
-            --text-muted: #9ca3af;
+            --primary-light: #fb923c;
+            --primary-soft: rgba(249, 115, 22, 0.10);
+            --primary-gradient: linear-gradient(135deg, #ff8c42 0%, #f97316 50%, #ea580c 100%);
+            --surface: #ffffff;
+            --surface-elevated: #ffffff;
+            --surface-soft: #fef7f0;
+            --surface-bg: #faf5f0;
+            --border-subtle: #f3e8de;
+            --border-light: #fde8d0;
+            --text-main: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #fef7f0 100%);
+            --shadow-sm: 0 1px 3px rgba(249, 115, 22, 0.06);
+            --shadow-md: 0 4px 16px rgba(249, 115, 22, 0.08);
+            --shadow-lg: 0 8px 32px rgba(249, 115, 22, 0.10);
         }
 
         body {
-            background-color: #020617;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--surface-bg);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             color: var(--text-main);
         }
@@ -44,15 +57,43 @@
         /* Sidebar Styles */
         .sidebar {
             height: 100vh;
-            background: radial-gradient(circle at top, #0f172a 0%, #020617 55%, #000000 100%);
+            background: var(--sidebar-bg);
             position: fixed;
             top: 0;
             left: 0;
             width: 260px;
             overflow-y: auto;
-            padding-top: 80px;
+            padding-top: 0;
             z-index: 99;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Logo area in sidebar */
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-brand img {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .sidebar-brand-text {
+            font-size: 22px;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
 
         .main-wrapper {
@@ -61,223 +102,293 @@
         }
 
         .sidebar.collapse-mode {
-            width: 70px;
+            width: 72px;
         }
 
-        .sidebar.collapse-mode .sidebar-text {
+        .sidebar.collapse-mode .sidebar-text,
+        .sidebar.collapse-mode .sidebar-brand-text {
             display: none;
         }
 
-        .sidebar.collapse-mode .main-wrapper {
-            margin-left: 70px;
+        .sidebar.collapse-mode .sidebar-brand {
+            justify-content: center;
+            padding: 20px 10px;
+        }
+
+        .sidebar.collapse-mode~.main-wrapper {
+            margin-left: 72px;
         }
 
         /* Navbar Styles */
         .navbar {
-            background: rgba(15, 23, 42, 0.98);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 1px 0 var(--border-subtle);
+            padding: 0 30px;
+            height: 66px;
             position: fixed;
             top: 0;
-            left: 0;
+            left: 260px;
             right: 0;
             z-index: 100;
-            border-bottom: 1px solid #0b1120;
+            display: flex;
+            align-items: center;
         }
 
         .navbar-brand {
             font-weight: 700;
-            color: #f9fafb;
-            font-size: 24px;
-            margin-left: 280px;
+            color: var(--text-main);
+            font-size: 18px;
         }
 
         /* Sidebar Menu */
         .sidebar-menu {
             list-style: none;
-            padding: 0;
+            padding: 12px 12px;
             margin: 0;
+            flex: 1;
+        }
+
+        .sidebar-menu .menu-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            padding: 18px 14px 8px;
         }
 
         .sidebar-menu li {
-            margin: 0;
+            margin: 2px 0;
         }
 
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 15px 20px;
-            color: rgba(255, 255, 255, 0.8);
+            padding: 11px 14px;
+            color: var(--text-secondary);
             text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            border: 1px solid transparent;
         }
 
-        .sidebar-menu a:hover,
+        .sidebar-menu a:hover {
+            background-color: var(--primary-soft);
+            color: var(--primary-dark);
+        }
+
         .sidebar-menu a.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white;
-            border-left-color: white;
+            background: var(--primary-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.30);
+            border-color: transparent;
+        }
+
+        .sidebar-menu a.active i {
+            color: #ffffff;
         }
 
         .sidebar-menu i {
-            font-size: 20px;
-            min-width: 50px;
+            font-size: 18px;
+            min-width: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .sidebar-menu a:hover i {
+            color: var(--primary);
         }
 
         .sidebar-text {
-            margin-left: 10px;
+            margin-left: 4px;
         }
 
         /* Main Content */
         .main-content {
-            padding: 100px 30px 30px 30px;
+            padding: 90px 30px 30px 30px;
         }
 
         /* Cards */
         .card {
-            border: 1px solid rgba(15, 23, 42, 0.9);
-            background: radial-gradient(circle at top left, #0b1120 0%, #020617 55%, #000000 100%);
-            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
-            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            border-radius: 16px;
             padding: 25px;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
         }
 
         .card:hover {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
 
         /* Statistics Cards */
         .stat-card {
-            background: linear-gradient(135deg, #020617 0%, #0b1120 60%, rgba(249, 115, 22, 0.08) 100%);
-            border-radius: 12px;
-            padding: 25px;
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-sm);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.25s ease;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
         .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px;
             margin-right: 20px;
         }
 
         .stat-icon.bg-primary-light {
-            background-color: var(--primary-soft);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.06) 100%);
             color: var(--primary);
         }
 
         .stat-icon.bg-success-light {
-            background-color: #e8f5e9;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%);
             color: #10b981;
         }
 
         .stat-icon.bg-danger-light {
-            background-color: #ffebee;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.06) 100%);
             color: #ef4444;
         }
 
         .stat-icon.bg-warning-light {
-            background-color: #fff3e0;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
             color: #f59e0b;
         }
 
         .stat-number {
-            font-size: 30px;
-            font-weight: 700;
-            color: #f9fafb;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-main);
             line-height: 1;
         }
 
         .stat-label {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
-            margin-top: 8px;
+            margin-top: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            font-weight: 600;
         }
 
         /* Table Styles */
         .table {
-            background: #020617;
+            background: var(--surface);
             border-radius: 12px;
             overflow: hidden;
         }
 
         .table thead {
-            background-color: #020617;
-            border-bottom: 1px solid #111827;
+            background-color: var(--surface-soft);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .table thead th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .table-hover tbody tr:hover {
-            background-color: #020617;
+            background-color: var(--surface-soft);
         }
 
         .table td {
             vertical-align: middle;
-            border-color: #111827;
-            padding: 15px;
+            border-color: var(--border-subtle);
+            padding: 14px 16px;
+            color: var(--text-secondary);
         }
 
         /* Badges */
         .badge {
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-weight: 500;
-            font-size: 12px;
+            font-weight: 600;
+            font-size: 11px;
         }
 
         /* Buttons */
         .btn {
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 10px 20px;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: all 0.2s ease;
             border: none;
+            font-size: 14px;
         }
 
         .btn-primary {
-            background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: var(--primary-gradient);
             color: #ffffff;
+            box-shadow: 0 3px 12px rgba(249, 115, 22, 0.25);
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
+            background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
             color: #ffffff;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
+        }
+
+        .btn-outline-secondary {
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            background: var(--surface);
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--surface-soft);
+            border-color: var(--primary-light);
+            color: var(--primary-dark);
         }
 
         .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 7px 14px;
+            font-size: 13px;
         }
 
         /* Search Input */
         .search-input {
-            background-color: #020617;
-            border: 1px solid #111827;
-            border-radius: 8px;
+            background-color: var(--surface-soft);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
             padding: 10px 15px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            color: var(--text-main);
         }
 
         .search-input:focus {
-            background-color: #020617;
+            background-color: #ffffff;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.12);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.10);
             outline: none;
         }
 
@@ -285,30 +396,31 @@
         .chat-list {
             height: calc(100vh - 200px);
             overflow-y: auto;
-            border-right: 1px solid #020617;
+            border-right: 1px solid var(--border-subtle);
         }
 
         .chat-item {
-            padding: 15px;
-            border-bottom: 1px solid #020617;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
 
         .chat-item:hover {
-            background-color: rgba(15, 23, 42, 0.85);
+            background-color: var(--surface-soft);
         }
 
         .chat-item.active {
-            background-color: rgba(15, 23, 42, 0.95);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%);
             border-left: 3px solid var(--primary);
-            padding-left: 11px;
+            padding-left: 15px;
         }
 
         .chat-item-name {
             font-weight: 600;
-            color: #e5e7eb;
-            margin-bottom: 5px;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            font-size: 14px;
         }
 
         .chat-item-message {
@@ -320,23 +432,45 @@
         }
 
         .chat-item-time {
-            font-size: 12px;
-            color: #64748b;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
         /* Unread conversation highlight */
         .chat-item.chat-item-unread {
-            background-color: rgba(249, 115, 22, 0.08);
-            border-left: 3px solid #f97316;
-            padding-left: 12px;
+            background-color: rgba(249, 115, 22, 0.07);
+            border-left: 3px solid var(--primary);
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .chat-item.chat-item-unread::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.06) 0%, transparent 100%);
+            pointer-events: none;
         }
 
         .chat-item.chat-item-unread:hover {
-            background-color: rgba(249, 115, 22, 0.15);
+            background-color: rgba(249, 115, 22, 0.12);
         }
 
         .chat-item.chat-item-unread .chat-item-time {
-            color: #f97316;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .chat-item.chat-item-unread .chat-item-name {
+            color: var(--text-main);
+        }
+
+        .chat-item.chat-item-unread .chat-item-message {
+            color: var(--text-secondary);
             font-weight: 600;
         }
 
@@ -345,12 +479,14 @@
             height: calc(100vh - 100px);
             display: flex;
             flex-direction: column;
+            border-radius: 16px;
+            overflow: hidden;
         }
 
         .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #020617;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, #020617 60%, rgba(249, 115, 22, 0.1) 100%);
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--surface);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -359,12 +495,12 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: radial-gradient(circle at top, #020617 0%, #020617 55%, #000000 100%);
+            padding: 24px;
+            background: linear-gradient(180deg, #fef7f0 0%, #ffffff 40%, #fef7f0 100%);
         }
 
         .message {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             display: flex;
             width: 100%;
             animation: slideIn 0.3s ease;
@@ -373,7 +509,7 @@
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
 
             to {
@@ -394,52 +530,66 @@
             display: inline-block;
             max-width: 60%;
             min-width: 40px;
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 12px 18px;
+            border-radius: 20px;
             word-wrap: break-word;
             white-space: normal;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
         .visitor-message .message-content {
-            background-color: #020617;
-            color: #e5e7eb;
-            border: 1px solid #111827;
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow-sm);
         }
 
         .admin-message .message-content {
-            background-image: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: var(--primary-gradient);
             color: #ffffff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 3px 12px rgba(249, 115, 22, 0.20);
         }
 
         .message-time {
             font-size: 11px;
-            color: #6b7280;
-            margin-top: 5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
         }
 
         /* Chat Input */
         .chat-input-area {
-            padding: 20px;
-            background: #020617;
-            border-top: 1px solid #020617;
+            padding: 18px 24px;
+            background: var(--surface);
+            border-top: 1px solid var(--border-subtle);
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .chat-input-area input {
             flex: 1;
-            border: 1px solid #111827;
+            border: 1.5px solid var(--border-subtle);
             border-radius: 999px;
-            padding: 12px 18px;
+            padding: 12px 20px;
             font-size: 14px;
-            background-color: #020617;
-            color: #e5e7eb;
+            background-color: var(--surface-soft);
+            color: var(--text-main);
+            transition: all 0.2s;
         }
 
         .chat-input-area input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.10);
+            background-color: #ffffff;
+        }
+
+        .chat-input-area .btn-primary {
+            border-radius: 999px;
+            padding: 10px 22px;
         }
 
         /* Responsive */
@@ -459,8 +609,8 @@
                 margin-left: 0;
             }
 
-            .navbar-brand {
-                margin-left: 15px;
+            .navbar {
+                left: 0;
             }
 
             .main-content {
@@ -479,7 +629,7 @@
 
             .chat-list {
                 border-right: none;
-                border-bottom: 1px solid #020617;
+                border-bottom: 1px solid var(--border-subtle);
                 height: auto;
                 max-height: 300px;
             }
@@ -491,7 +641,7 @@
 
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -499,12 +649,94 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 4px;
+            background: #e2d6cc;
+            border-radius: 10px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
+            background: #d4c4b6;
+        }
+
+        /* Profile avatar ring */
+        .profile-avatar {
+            border: 2px solid var(--border-subtle);
+            transition: border-color 0.2s;
+        }
+
+        .profile-avatar:hover {
+            border-color: var(--primary-light);
+        }
+
+        /* Dropdown styling */
+        .dropdown-menu {
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: 6px;
+            background: var(--surface);
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--surface-soft);
+            color: var(--primary-dark);
+        }
+
+        .dropdown-divider {
+            border-color: var(--border-subtle);
+            margin: 4px 0;
+        }
+
+        /* Sidebar footer */
+        .sidebar-footer {
+            padding: 16px 22px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-footer-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 2px solid var(--border-subtle);
+        }
+
+        .sidebar-footer-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+
+        .sidebar-footer-role {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 998;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
         }
     </style>
 
@@ -512,87 +744,95 @@
 </head>
 
 <body>
-    <!-- TOP NAVBAR -->
-    <nav class="navbar text-light">
-        <div class="d-flex align-items-center" style="width: 100%; justify-content: space-between;">
-            <!-- Left Side: Brand & Toggle -->
-            <div class="d-flex align-items-center">
-                <button class="btn btn-link text-light d-none d-lg-block" id="sidebar-toggle"
-                    style="border: none; font-size: 24px;">
-                    <i class="bi bi-list"></i>
-                </button>
-                <button class="btn btn-link text-light d-lg-none" id="mobile-sidebar-toggle"
-                    style="border: none; font-size: 24px;">
-                    <i class="bi bi-list"></i>
-                </button>
-                <a class="navbar-brand" style="margin-left: 20px; margin: 0;">
-                    <i class="bi bi-chat-dots"></i> Chatbot Admin
-                </a>
-            </div>
-
-            <!-- Middle: Search Bar -->
-            <div class="flex-grow-1" style="margin: 0 30px; max-width: 400px;">
-                <div class="input-group">
-                    <span class="input-group-text search-input" style="border: none;">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" class="form-control search-input text-light"
-                        placeholder="Search conversations..." style="border: none; background: transparent;">
-                </div>
-            </div>
-
-            <!-- Right Side: Icons & Profile -->
-            <div class="d-flex align-items-center gap-3">
-                <!-- Notification Icon -->
-                <button class="btn btn-link text-light position-relative" style="font-size: 20px; border: none;">
-                    <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        style="font-size: 10px;">
-                        3
-                    </span>
-                </button>
-
-                <!-- Profile Dropdown -->
-                <div class="dropdown">
-                    <button class="btn btn-link text-light d-flex align-items-center gap-2" type="button"
-                        id="profileDropdown" data-bs-toggle="dropdown">
-                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
-                            alt="Admin" width="36" height="36" class="rounded-circle">
-                        <span class="d-none d-sm-inline text-light" style="font-weight: 500;">Admin</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item text-danger" href="#"><i
-                                    class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
+        <!-- Brand / Logo -->
+        <div class="sidebar-brand">
+            <img src="{{ asset('images/chatbot-logo.png') }}" alt="Miraai Logo">
+            <span class="sidebar-brand-text">Miraai</span>
+        </div>
+
         <ul class="sidebar-menu">
+            <li class="menu-label">Main Menu</li>
             <li>
                 <a href="{{ route('admin.dashboard') }}"
                     class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-house-door-fill"></i>
+                    <i class="bi bi-grid-1x2-fill"></i>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="{{ route('admin.conversations') }}"
                     class="{{ request()->routeIs('admin.conversations') || request()->routeIs('admin.chat') ? 'active' : '' }}">
-                    <i class="bi bi-chat-left-text"></i>
+                    <i class="bi bi-chat-square-text-fill"></i>
                     <span class="sidebar-text">Conversations</span>
                 </a>
             </li>
         </ul>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <img src="https://ui-avatars.com/api/?name=Admin&background=f97316&color=fff&bold=true" alt="Admin"
+                class="sidebar-footer-avatar">
+            <div style="flex: 1; min-width: 0;">
+                <div class="sidebar-footer-name">Admin User</div>
+                <div class="sidebar-footer-role">Administrator</div>
+            </div>
+        </div>
     </aside>
+
+    <!-- TOP NAVBAR -->
+    <nav class="navbar">
+        <div class="d-flex align-items-center" style="width: 100%; justify-content: space-between;">
+            <!-- Left Side: Toggle & Page title -->
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-link d-none d-lg-block" id="sidebar-toggle"
+                    style="border: none; font-size: 20px; color: var(--text-secondary); padding: 4px 8px;">
+                    <i class="bi bi-layout-sidebar-inset"></i>
+                </button>
+                <button class="btn btn-link d-lg-none" id="mobile-sidebar-toggle"
+                    style="border: none; font-size: 20px; color: var(--text-secondary); padding: 4px 8px;">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div style="height: 24px; width: 1px; background: var(--border-subtle); margin: 0 4px;"
+                    class="d-none d-md-block"></div>
+                <span class="navbar-brand mb-0" style="margin: 0;">@yield('title', 'Dashboard')</span>
+            </div>
+
+            <!-- Right Side: Profile Only -->
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none" type="button"
+                        id="profileDropdown" data-bs-toggle="dropdown" style="padding: 4px;">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=f97316&color=fff&bold=true"
+                            alt="Admin" width="36" height="36" class="rounded-circle profile-avatar">
+                        <div class="d-none d-sm-block text-start">
+                            <div style="font-weight: 600; font-size: 13px; color: var(--text-main); line-height: 1.2;">
+                                Admin</div>
+                            <div style="font-size: 11px; color: var(--text-muted); line-height: 1.2;">Administrator
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-down d-none d-sm-inline"
+                            style="font-size: 12px; color: var(--text-muted);"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"
+                                    style="color: var(--text-muted);"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"
+                                    style="color: var(--text-muted);"></i>Settings</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="#" style="color: #ef4444;"><i
+                                    class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
 
     <!-- MAIN CONTENT -->
     <div class="main-wrapper">
@@ -609,15 +849,29 @@
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
         const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
 
         if (window.innerWidth > 992) {
             sidebarToggle?.addEventListener('click', function() {
                 sidebar.classList.toggle('collapse-mode');
+                // Adjust navbar left
+                const navbar = document.querySelector('.navbar');
+                if (sidebar.classList.contains('collapse-mode')) {
+                    navbar.style.left = '72px';
+                } else {
+                    navbar.style.left = '260px';
+                }
             });
         }
 
         mobileSidebarToggle?.addEventListener('click', function() {
             sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        });
+
+        sidebarOverlay?.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.remove('show');
         });
 
         // Close sidebar on item click (mobile)
@@ -625,6 +879,7 @@
             link.addEventListener('click', function() {
                 if (window.innerWidth < 992) {
                     sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
                 }
             });
         });

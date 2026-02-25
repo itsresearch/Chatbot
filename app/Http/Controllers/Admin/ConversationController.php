@@ -50,9 +50,11 @@ class ConversationController extends Controller
                 'status' => $conv->status,
                 'is_unread' => $isUnread,
                 'last_message' => $lastMessage ? \Illuminate\Support\Str::limit($lastMessage->message, 50) : null,
+                'last_message_sender' => $lastMessage ? $lastMessage->sender_type : null,
                 'last_message_at' => $conv->last_message_at?->toIso8601String(),
                 'last_message_at_human' => $conv->last_message_at?->diffForHumans(),
                 'last_message_at_time' => $conv->last_message_at?->format('H:i'),
+                'last_message_at_date' => $conv->last_message_at?->format('d M'),
                 'message_count' => $conv->messages()->count(),
             ];
         });

@@ -1,8 +1,13 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const API_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiUrl) || "http://127.0.0.1:8000/api/chat/send";
-    const API_KEY = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiKey) || "123456"; // Your website's API key
-    const SERVER_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.serverUrl) || "http://127.0.0.1:8000";
-    const LOGO_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.logoUrl) || SERVER_URL + "/images/chatbot-logo.png";
+(function() {
+    function initChatWidget() {
+        // Prevent double initialization
+        if (window.ChatbotWidgetInitialized) return;
+        window.ChatbotWidgetInitialized = true;
+
+        const API_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiUrl) || "http://127.0.0.1:8000/api/chat/send";
+        const API_KEY = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiKey) || "123456"; // Your website's API key
+        const SERVER_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.serverUrl) || "http://127.0.0.1:8000";
+        const LOGO_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.logoUrl) || SERVER_URL + "/images/chatbot-logo.png";
 
     const BRAND_PRIMARY = "#ff7a18";
     const BRAND_PRIMARY_DARK = "#e8620b";
@@ -634,5 +639,13 @@ document.addEventListener("DOMContentLoaded", function () {
             sendButton.disabled = false;
         }
     }
-});
+    }
+
+    // Initialize immediately if DOM already ready, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initChatWidget);
+    } else {
+        initChatWidget();
+    }
+})();
 

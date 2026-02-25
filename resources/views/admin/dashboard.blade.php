@@ -6,8 +6,9 @@
     <!-- Page Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-1 fw-semibold text-light">Chatbot overview</h1>
-            <p class="mb-0" style="color: var(--text-muted);">Real-time view of conversations, load, and activity.</p>
+            <h1 class="h3 mb-1 fw-bold" style="color: var(--text-main);">Chatbot Overview</h1>
+            <p class="mb-0" style="color: var(--text-muted); font-size: 14px;">Real-time view of conversations, load, and
+                activity.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <button class="btn btn-outline-secondary btn-sm">
@@ -70,10 +71,10 @@
     <!-- Recent Conversations Section -->
     <div class="card p-0">
         <div class="d-flex align-items-center justify-content-between px-3 px-md-4 pt-3 pb-2 border-bottom"
-            style="border-color: #020617 !important;">
+            style="border-color: var(--border-subtle) !important;">
             <div>
-                <h5 class="mb-1 text-light fw-semibold">Recent conversations</h5>
-                <small style="color: var(--text-muted);">
+                <h5 class="mb-1 fw-semibold" style="color: var(--text-main);">Recent Conversations</h5>
+                <small style="color: var(--text-muted); font-size: 12px;">
                     Last {{ $recentConversations->count() }} active threads
                 </small>
             </div>
@@ -96,10 +97,11 @@
                         (!$conversation->admin_viewed_at ||
                             $conversation->last_message_at > $conversation->admin_viewed_at);
                 @endphp
-                <a href="{{ route('admin.chat', $conversation) }}" class="chat-item d-flex align-items-center"
+                <a href="{{ route('admin.chat', $conversation) }}"
+                    class="chat-item d-flex align-items-center {{ $isUnread ? 'chat-item-unread' : '' }}"
                     style="text-decoration: none;">
-                    <img src="https://ui-avatars.com/api/?name={{ $avatarName }}&background=020617&color=f97316&size=64"
-                        alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
+                    <img src="{{ asset('images/visitor-avatar.svg') }}" alt="Avatar" width="40" height="40"
+                        class="rounded-circle me-3 flex-shrink-0" style="border: 2px solid var(--border-light);">
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <div class="d-flex align-items-center gap-2">
@@ -108,7 +110,7 @@
                                 </div>
                                 @if ($isUnread)
                                     <span class="badge rounded-pill"
-                                        style="background-color: rgba(249,115,22,0.18); color: #fed7aa; font-size: 0.7rem;">
+                                        style="background-color: rgba(249,115,22,0.12); color: #ea580c; font-size: 0.7rem; font-weight: 600;">
                                         New
                                     </span>
                                 @endif
@@ -121,16 +123,21 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="chat-item-message">
+                        <div class="chat-item-message {{ $isUnread ? 'fw-bold' : '' }}"
+                            style="{{ $isUnread ? 'color: var(--text-main);' : '' }}">
                             @if ($lastMessage)
+                                @if ($lastMessage->sender_type === 'admin')
+                                    <span style="color: var(--primary); font-weight: 600;">You:</span>
+                                @endif
                                 {{ \Illuminate\Support\Str::limit($lastMessage->message, 70) }}
                             @else
                                 <span style="color: var(--text-muted);">No messages yet</span>
                             @endif
                         </div>
-                        <div class="mt-1 small" style="color: var(--text-muted);">
-                            {{ $conversation->website->name ?? 'Unknown website' }}
-                            · {{ $conversation->messages->count() }} messages
+                        <div class="mt-1 small" style="color: var(--text-muted); font-size: 11px;">
+                            @if ($conversation->last_message_at)
+                                {{ $conversation->last_message_at->format('d M') }}
+                            @endif
                         </div>
                     </div>
                 </a>

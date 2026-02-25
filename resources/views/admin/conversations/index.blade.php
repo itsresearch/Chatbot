@@ -3,10 +3,11 @@
 @section('title', 'Conversations')
 
 @section('content')
-    <div class="d-flex" style="height: calc(100vh - 100px); background: #f9fafb; overflow: hidden;">
+    <div class="d-flex"
+        style="height: calc(100vh - 100px); background: var(--surface-bg); overflow: hidden; border-radius: 16px; border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm);">
         <!-- Sidebar - Conversations List -->
         <div
-            style="width: 320px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
+            style="width: 320px; background: var(--surface); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; border-radius: 16px 0 0 16px;">
             <!-- Header -->
             <div class="p-4 border-b border-gray-200">
                 <h1 class="text-xl font-bold text-gray-900">Messages</h1>
@@ -83,7 +84,8 @@
     </div>
 
     <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="flex-1 flex flex-col"
+        style="background: linear-gradient(135deg, #fef7f0 0%, #ffffff 50%, #fef7f0 100%); border-radius: 0 16px 16px 0;">
         <div id="chat-container" class="flex-1 flex items-center justify-center">
             <div class="text-center">
                 <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,9 +151,19 @@
                 });
         }
 
-        // ── Sidebar live-refresh ──────────────────────────────
+        // ── WebSocket live-refresh using Laravel Echo ──────
         const conversationsList = document.getElementById('conversations-list');
-        let sidebarTimer = null;
+        let activeConversationId = null;
+
+        if (window.Echo) {
+            // Subscribe to conversations channel to listen for new messages
+            window.Echo.channel('conversations')
+                .listen('.MessageSent', (e) => {
+                    if (e && e.message && e.message.conversation_id) {
+                        refreshSidebar();
+                    }
+                });
+        }
 
         function buildConversationItem(conv) {
             const isActive = conv.id === activeConversationId;
@@ -212,15 +224,10 @@
             }
         }
 
-        async function doSidebarPoll() {
-            await refreshSidebar();
-            sidebarTimer = setTimeout(doSidebarPoll, 5000);
-        }
-
-        sidebarTimer = setTimeout(doSidebarPoll, 5000);
-
         window.addEventListener('beforeunload', function() {
-            if (sidebarTimer) clearTimeout(sidebarTimer);
+            if (window.Echo) {
+                window.Echo.leave('conversations');
+            }
         });
 
         @if ($conversations->count() > 0)

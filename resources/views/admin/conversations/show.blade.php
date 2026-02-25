@@ -19,13 +19,13 @@
                             style="color: var(--text-muted);">
                             <i class="bi bi-arrow-left-circle"></i>
                         </a>
-                        <h1 class="h4 mb-0 text-light">Conversations</h1>
+                        <h1 class="h4 mb-0" style="color: var(--text-main); font-weight: 700;">Conversations</h1>
                     </div>
-                    <small style="color: var(--text-muted);">Dark, messaging-style inbox for all visitors.</small>
+                    <div class="small" style="color: var(--text-muted);">Messaging inbox for all visitors.</div>
                 </div>
                 <div>
                     <span data-status-badge class="badge rounded-pill"
-                        style="background-color: rgba(34,197,94,0.12); color: #bbf7d0;">
+                        style="background-color: rgba(249,115,22,0.10); color: #ea580c; font-weight: 600;">
                         {{ $conversation->status === 'human' ? 'Human' : 'Bot' }}
                     </span>
                 </div>
@@ -37,17 +37,19 @@
             <div class="col-lg-4">
                 <div class="card p-0" style="height: calc(100vh - 150px); overflow: hidden;">
                     <div class="d-flex align-items-center justify-content-between px-3 py-3 border-bottom"
-                        style="border-color: #020617 !important;">
+                        style="border-color: var(--border-subtle) !important;">
                         <div>
-                            <h6 class="mb-0 text-light">Inbox</h6>
-                            <small style="color: var(--text-muted);">Select a visitor to view chat</small>
+                            <h6 class="mb-0" style="color: var(--text-main); font-weight: 700;">Inbox</h6>
+                            <small style="color: var(--text-muted); font-size: 12px;">Select a visitor to view
+                                chat</small>
                         </div>
-                        <span class="badge" style="background-color: rgba(15,23,42,0.9); color: var(--text-muted);">
+                        <span class="badge"
+                            style="background-color: var(--primary-soft); color: var(--primary-dark); font-weight: 600;">
                             {{ $conversations->count() }} total
                         </span>
                     </div>
 
-                    <div class="px-3 pt-2 pb-3 border-bottom" style="border-color: #020617 !important;">
+                    {{-- <div class="px-3 pt-2 pb-3 border-bottom" style="border-color: var(--border-subtle) !important;">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text search-input border-0">
                                 <i class="bi bi-search" style="color: var(--text-muted);"></i>
@@ -55,7 +57,7 @@
                             <input type="text" class="form-control border-0 search-input text-light"
                                 placeholder="Search people..." id="conversation-search">
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div class="chat-list" id="conversation-list">
                         @forelse ($conversations as $conv)
@@ -76,14 +78,21 @@
                                 @continue
                             @endif
                             <a href="{{ route('admin.chat', $conv) }}"
-                                class="chat-item d-flex align-items-center {{ $isActive ? 'active' : '' }}"
+                                class="chat-item d-flex align-items-center {{ $isActive ? 'active' : '' }} {{ $isUnread ? 'chat-item-unread' : '' }}"
                                 data-visitor-label="{{ \Illuminate\Support\Str::lower($label) }}">
-                                <img src="https://ui-avatars.com/api/?name={{ $avatarName }}&background=020617&color=f97316&size=64"
-                                    alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
+                                <img src="{{ asset('images/visitor-avatar.svg') }}" alt="Avatar" width="40"
+                                    height="40" class="rounded-circle me-3 flex-shrink-0"
+                                    style="border: 2px solid var(--border-light);">
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <div class="chat-item-name {{ $isUnread ? 'fw-bold' : '' }}">
-                                            {{ $label }}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="chat-item-name {{ $isUnread ? 'fw-bold' : '' }}">
+                                                {{ $label }}
+                                            </div>
+                                            @if ($isUnread)
+                                                <span class="badge rounded-pill"
+                                                    style="background-color: rgba(249,115,22,0.15); color: #ea580c; font-size: 0.65rem; font-weight: 700; padding: 3px 8px;">NEW</span>
+                                            @endif
                                         </div>
                                         <div class="chat-item-time">
                                             @if ($conv->last_message_at)
@@ -93,16 +102,21 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <div class="chat-item-message">
+                                    <div class="chat-item-message {{ $isUnread ? 'fw-bold' : '' }}"
+                                        style="{{ $isUnread ? 'color: var(--text-main);' : '' }}">
                                         @if ($lastMessage)
+                                            @if ($lastMessage->sender_type === 'admin')
+                                                <span style="color: var(--primary); font-weight: 600;">You:</span>
+                                            @endif
                                             {{ \Illuminate\Support\Str::limit($lastMessage->message, 50) }}
                                         @else
                                             <span style="color: var(--text-muted);">No messages yet</span>
                                         @endif
                                     </div>
-                                    <div class="mt-1 small" style="color: var(--text-muted);">
-                                        {{ $conv->website->name ?? 'Unknown website' }}
-                                        · {{ $conv->messages->count() }} messages
+                                    <div class="mt-1 small" style="color: var(--text-muted); font-size: 11px;">
+                                        @if ($conv->last_message_at)
+                                            {{ $conv->last_message_at->format('d M') }}
+                                        @endif
                                     </div>
                                 </div>
                             </a>
@@ -120,10 +134,10 @@
                 <div class="card p-0 chat-window">
                     <div class="chat-header">
                         <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name={{ $activeAvatarName }}&background=020617&color=f97316&size=64"
-                                alt="Visitor" width="40" height="40" class="rounded-circle me-2">
+                            <img src="{{ asset('images/visitor-avatar.svg') }}" alt="Visitor" width="40"
+                                height="40" class="rounded-circle me-2" style="border: 2px solid var(--border-light);">
                             <div>
-                                <div class="fw-semibold text-light">
+                                <div class="fw-semibold" style="color: var(--text-main);">
                                     {{ $activeVisitorLabel }}
                                 </div>
                                 <small style="color: var(--text-muted);">
@@ -138,7 +152,7 @@
                                 {{ $conversation->last_message_at?->diffForHumans() ?? 'N/A' }}
                             </div>
                             <div class="small" style="color: var(--text-muted);">
-                                #{{ $conversation->id }} · {{ $conversation->messages->count() }} messages
+                                id {{ $conversation->id }} · {{ $conversation->messages->count() }} messages
                             </div>
                         </div>
                     </div>
@@ -385,23 +399,23 @@
                     class="chat-item d-flex align-items-center ${isActive ? 'active' : ''} ${unread ? 'chat-item-unread' : ''}"
                     data-visitor-label="${label.toLowerCase()}"
                     data-conversation-id="${conv.id}">
-                    <img src="https://ui-avatars.com/api/?name=${avatarName}&background=020617&color=f97316&size=64"
-                        alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0">
+                    <img src="/images/visitor-avatar.svg"
+                        alt="Avatar" width="40" height="40" class="rounded-circle me-3 flex-shrink-0" style="border: 2px solid var(--border-light);">
                     <div class="flex-grow-1 overflow-hidden">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div class="chat-item-name ${unread ? 'fw-bold text-white' : ''}">
+                            <div class="chat-item-name ${unread ? 'fw-bold' : ''}">
                                 ${label}
-                                ${unread ? '<span class="ms-2 badge bg-warning text-dark" style="font-size:9px;">NEW</span>' : ''}
+                                ${unread ? '<span class="ms-2 badge" style="background-color:rgba(249,115,22,0.12);color:#ea580c;font-size:9px;">NEW</span>' : ''}
                             </div>
                             <div class="chat-item-time">
                                 ${conv.last_message_at_time || '—'}
                             </div>
                         </div>
-                        <div class="chat-item-message ${unread ? 'fw-semibold text-light' : ''}">
-                            ${conv.last_message ? conv.last_message : '<span style="color:var(--text-muted);">No messages yet</span>'}
+                        <div class="chat-item-message ${unread ? 'fw-bold' : ''}" style="${unread ? 'color:var(--text-main);' : ''}">
+                            ${conv.last_message ? ((conv.last_message_sender === 'admin' ? '<span style="color:var(--primary);font-weight:600;">You:</span> ' : '') + conv.last_message) : '<span style="color:var(--text-muted);">No messages yet</span>'}
                         </div>
-                        <div class="mt-1 small" style="color: var(--text-muted);">
-                            ${conv.website_name} · ${conv.message_count} messages
+                        <div class="mt-1 small" style="color: var(--text-muted); font-size: 11px;">
+                            ${conv.last_message_at_date || ''}
                         </div>
                     </div>
                 </a>`;
