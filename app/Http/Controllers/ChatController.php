@@ -13,17 +13,15 @@ class ChatController extends Controller
 {
     public function sendMessage(Request $request)
     {
-        //  Validate input
         $request->validate([
             'api_key' => 'required|string',
             'visitor_token' => 'required|string',
             'message' => 'required|string',
         ]);
 
-        //  Identify website
-        $website = Website::where('api_key', $request->api_key)->first();
+        $website = Website::where('api_key', $request->api_key)->where('is_active', true)->first();
         if (!$website) {
-            return response()->json(['error' => 'Invalid API key'], 403);
+            return response()->json(['error' => 'Invalid API key or website disabled'], 403);
         }
 
         //  Identify visitor
@@ -51,7 +49,11 @@ class ChatController extends Controller
         ]);
 
         //  Broadcast visitor message
-        broadcast(new MessageSent($visitorMessage));
+        try {
+            broadcast(new MessageSent($visitorMessage));
+        } catch (\Exception $e) {
+            // Broadcasting may fail if Reverb isn't running — non-critical
+        }
 
         //  Update last_message_at
         $conversation->update(['last_message_at' => now()]);
@@ -70,7 +72,11 @@ class ChatController extends Controller
             ]);
 
             //  Broadcast bot message
-            broadcast(new MessageSent($botMessage));
+            try {
+                broadcast(new MessageSent($botMessage));
+            } catch (\Exception $e) {
+                // Broadcasting may fail if Reverb/Pusher isn't running — non-critical
+            }
 
             $newMessages[] = $botMessage;
 
@@ -148,7 +154,6 @@ class ChatController extends Controller
         $conversationId = (int) $request->conversation_id;
         $afterId = (int) $request->input('after_id', 0);
 
-        // Single join query validates ownership (1 query instead of 3)
         $conversation = Conversation::query()
             ->join('visitors', 'visitors.id', '=', 'conversations.visitor_id')
             ->join('websites', 'websites.id', '=', 'conversations.website_id')
@@ -162,7 +167,6 @@ class ChatController extends Controller
             return response()->json(['messages' => [], 'status' => null]);
         }
 
-        // Only fetch messages newer than what client already has
         $messages = $afterId > 0
             ? Message::where('conversation_id', $conversationId)
                 ->where('id', '>', $afterId)
@@ -173,6 +177,25 @@ class ChatController extends Controller
         return response()->json([
             'messages' => $messages,
             'status' => $conversation->status,
+        ]);
+    }
+
+    /**
+     * Widget config endpoint — returns per-website customization.
+     */
+    public function widgetConfig(Request $request)
+    {
+        $request->validate(['api_key' => 'required|string']);
+
+        $website = Website::where('api_key', $request->api_key)->where('is_active', true)->first();
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
+
+        return response()->json([
+            'name' => $website->name,
+            'welcome_message' => $website->welcome_message,
+            'widget_color' => $website->widget_color,
         ]);
     }
 }

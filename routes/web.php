@@ -2,13 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
-use App\Http\Controllers\Admin\ConversationController;
-use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboard;
+use App\Http\Controllers\SuperAdmin\ClientController;
+use App\Http\Controllers\Client\DashboardController as ClientDashboard;
+use App\Http\Controllers\Client\ConversationController;
+use App\Http\Controllers\Client\WebsiteController;
 
+// ── Public ──────────────────────────────────────────────────
 Route::get('/', function () {
     return view('welcome');
 });
 
+// ── Redirect after login (by role) ─────────────────────────
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -16,26 +21,35 @@ Route::middleware([
 ])->group(function () {
 
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        return app(\App\Http\Middleware\RedirectByRole::class)->handle(request(), fn () => redirect('/'));
     })->name('dashboard');
 
-    Route::prefix('admin')->as('admin.')->group(function () {
-            Route::redirect('/', '/admin/dashboard');
+    // ── Super Admin Routes ──────────────────────────────────
+    Route::prefix('superadmin')->as('superadmin.')->middleware('superadmin')->group(function () {
+        Route::get('/', fn () => redirect()->route('superadmin.dashboard'));
+        Route::get('dashboard', [SuperAdminDashboard::class, 'index'])->name('dashboard');
 
-            Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-            
-            Route::controller(ConversationController::class)->group(function () {
+        // Client CRUD
+        Route::resource('clients', ClientController::class)->parameters(['clients' => 'client']);
+        Route::post('clients/{client}/toggle-status', [ClientController::class, 'toggleStatus'])->name('clients.toggle-status');
+    });
 
-                Route::get('conversations', 'index')->name('conversations');
-                Route::get('conversations/list', 'conversationsList')->name('conversations.list');
+    // ── Client Routes ───────────────────────────────────────
+    Route::prefix('client')->as('client.')->middleware('client')->group(function () {
+        Route::get('/', fn () => redirect()->route('client.dashboard'));
+        Route::get('dashboard', [ClientDashboard::class, 'index'])->name('dashboard');
 
-                Route::get('chat/{conversation}', 'show')->name('chat');
-                Route::get('chat/{conversation}/content', 'chatContent')->name('chat.content');
-                Route::post('chat/{conversation}/mark-viewed', 'markViewed')->name('chat.mark-viewed');
-                Route::get('chat/{conversation}/messages', 'messages')->name('chat.messages');
-                Route::post('chat/{conversation}/send', 'send')->name('chat.send');
-            });
+        // Websites
+        Route::resource('websites', WebsiteController::class);
+        Route::post('websites/{website}/regenerate-key', [WebsiteController::class, 'regenerateKey'])->name('websites.regenerate-key');
 
-        });
-
+        // Conversations
+        Route::get('conversations', [ConversationController::class, 'index'])->name('conversations');
+        Route::get('conversations/list', [ConversationController::class, 'conversationsList'])->name('conversations.list');
+        Route::get('chat/{conversation}', [ConversationController::class, 'show'])->name('chat');
+        Route::get('chat/{conversation}/content', [ConversationController::class, 'chatContent'])->name('chat.content');
+        Route::post('chat/{conversation}/mark-viewed', [ConversationController::class, 'markViewed'])->name('chat.mark-viewed');
+        Route::get('chat/{conversation}/messages', [ConversationController::class, 'messages'])->name('chat.messages');
+        Route::post('chat/{conversation}/send', [ConversationController::class, 'send'])->name('chat.send');
+    });
 });

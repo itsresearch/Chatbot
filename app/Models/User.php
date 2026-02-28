@@ -29,7 +29,38 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'company_name',
+        'phone',
+        'is_active',
     ];
+
+    // ── Role helpers ──────────────────────────────
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
+    }
+
+    // ── Relationships ─────────────────────────────
+    public function websites()
+    {
+        return $this->hasMany(Website::class);
+    }
+
+    public function conversations()
+    {
+        return Conversation::whereIn('website_id', $this->websites()->pluck('id'));
+    }
+
+    public function websiteIds(): array
+    {
+        return $this->websites()->pluck('id')->toArray();
+    }
 
     /**
      * The attributes that should be hidden for serialization.

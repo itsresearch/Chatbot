@@ -12,16 +12,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //  
-        Schema::defaultStringLength(191);
+        //
+    }
 
-        }
-        
-        /**
-         * Bootstrap any application services.
-        */
-        public function boot(): void
-        {
-            //
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        Schema::defaultStringLength(191);
     }
 }

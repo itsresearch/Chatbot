@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Test User']
         );
 
+        $this->call(SuperAdminSeeder::class);
         $this->call(WebsiteSeeder::class);
     }
 }

@@ -5,13 +5,56 @@
         window.ChatbotWidgetInitialized = true;
 
         const API_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiUrl) || "http://127.0.0.1:8000/api/chat/send";
-        const API_KEY = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiKey) || "123456"; // Your website's API key
+        const API_KEY = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.apiKey) || "123456";
         const SERVER_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.serverUrl) || "http://127.0.0.1:8000";
         const LOGO_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.logoUrl) || SERVER_URL + "/images/chatbot-logo.png";
 
-    const BRAND_PRIMARY = "#ff7a18";
-    const BRAND_PRIMARY_DARK = "#e8620b";
-    const BRAND_BACKGROUND = "#fff3e0";
+    // Defaults — will be overridden by widget-config API
+    let BRAND_PRIMARY = "#ff7a18";
+    let BRAND_PRIMARY_DARK = "#e8620b";
+    let BRAND_BACKGROUND = "#fff3e0";
+    let WELCOME_MESSAGE = "Hi there! How can I help you today?";
+
+    // Fetch per-website config (color, welcome message) from the server
+    async function loadWidgetConfig() {
+        try {
+            const res = await fetch(SERVER_URL + "/api/chat/widget-config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ api_key: API_KEY })
+            });
+            if (res.ok) {
+                const cfg = await res.json();
+                if (cfg.widget_color) {
+                    BRAND_PRIMARY = cfg.widget_color;
+                    // Darken the primary color for hover/gradient
+                    BRAND_PRIMARY_DARK = darkenColor(BRAND_PRIMARY, 20);
+                    BRAND_BACKGROUND = lightenColor(BRAND_PRIMARY, 90);
+                }
+                if (cfg.welcome_message) {
+                    WELCOME_MESSAGE = cfg.welcome_message;
+                }
+            }
+        } catch (e) {
+            console.warn("Widget config fetch failed, using defaults.", e);
+        }
+    }
+
+    function darkenColor(hex, pct) {
+        const num = parseInt(hex.replace("#",""), 16);
+        const r = Math.max(0, (num >> 16) - Math.round(2.55 * pct));
+        const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(2.55 * pct));
+        const b = Math.max(0, (num & 0x0000FF) - Math.round(2.55 * pct));
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function lightenColor(hex, pct) {
+        const num = parseInt(hex.replace("#",""), 16);
+        const r = Math.min(255, (num >> 16) + Math.round(2.55 * pct));
+        const g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round(2.55 * pct));
+        const b = Math.min(255, (num & 0x0000FF) + Math.round(2.55 * pct));
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
 
     // Ensure we keep a stable visitor token
     let visitorToken = localStorage.getItem("visitor_token");
@@ -20,7 +63,8 @@
         localStorage.setItem("visitor_token", visitorToken);
     }
 
-    // Inject scoped styles for the widget
+    // Inject scoped styles for the widget (called after config load so colors are dynamic)
+    function injectStyles() {
     const style = document.createElement("style");
     style.textContent = `
       .cb-widget-root {
@@ -285,8 +329,13 @@
       }
     `;
     document.head.appendChild(style);
+    } // end injectStyles
 
-    // Build widget DOM
+    // Load config first, then inject styles & build DOM
+    async function bootstrap() {
+    await loadWidgetConfig();
+    injectStyles();
+
     const root = document.createElement("div");
     root.className = "cb-widget-root";
     root.innerHTML = `
@@ -355,9 +404,10 @@
     let lastMessageId = 0;
     let pollInterval = null;
     
-    // Message persistence with localStorage
-    const STORAGE_KEY = `chatbot_messages_${visitorToken}`;
-    const CONVERSATION_KEY = `chatbot_conversation_${visitorToken}`;
+    // Message persistence with localStorage — scoped per API_KEY to avoid cross-website contamination
+    const WIDGET_SCOPE = API_KEY.substring(0, 16);
+    const STORAGE_KEY = `chatbot_messages_${visitorToken}_${WIDGET_SCOPE}`;
+    const CONVERSATION_KEY = `chatbot_conversation_${visitorToken}_${WIDGET_SCOPE}`;
     
     function loadConversationId() {
         const stored = localStorage.getItem(CONVERSATION_KEY);
@@ -498,8 +548,8 @@
                 // Start polling for new admin messages
                 pollForMessages();
             } else if (!conversationId && !hasInitialGreeting) {
-                // First time - show greeting
-                displayMessage("bot", "Hi there! How can I help you today?", new Date().toISOString());
+                // First time - show greeting from widget config
+                displayMessage("bot", WELCOME_MESSAGE, new Date().toISOString());
                 hasInitialGreeting = true;
             } else if (conversationId && !pollInterval) {
                 // Resume polling if it was paused
@@ -595,8 +645,8 @@
 
             // Handle conversation creation and ID tracking
             if (data && data.conversation_id) {
-                if (!conversationId) {
-                    // First message - save conversation ID and start polling
+                if (!conversationId || conversationId !== data.conversation_id) {
+                    // Save/update conversation ID and (re)start polling
                     saveConversationId(data.conversation_id);
                     pollForMessages();
                 }
@@ -639,7 +689,10 @@
             sendButton.disabled = false;
         }
     }
-    }
+    } // end bootstrap
+
+    bootstrap();
+    } // end initChatWidget
 
     // Initialize immediately if DOM already ready, otherwise wait
     if (document.readyState === 'loading') {
