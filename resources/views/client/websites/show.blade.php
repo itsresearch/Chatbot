@@ -61,6 +61,17 @@
                             <span class="fw-semibold">{{ $website->widget_color }}</span>
                         </div>
                     </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom"
+                        style="border-color: var(--border-subtle) !important;">
+                        <span style="color: var(--text-muted);">Color Style</span>
+                        <span class="fw-semibold text-capitalize">{{ $website->widget_color_type ?? 'gradient' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom"
+                        style="border-color: var(--border-subtle) !important;">
+                        <span style="color: var(--text-muted);">Position</span>
+                        <span
+                            class="fw-semibold text-capitalize">{{ str_replace('-', ' ', $website->widget_position ?? 'bottom-right') }}</span>
+                    </div>
                     <div class="d-flex justify-content-between py-2" style="border-color: var(--border-subtle) !important;">
                         <span style="color: var(--text-muted);">Created</span>
                         <span class="fw-semibold">{{ $website->created_at->format('M d, Y') }}</span>
@@ -99,10 +110,8 @@
                     <pre id="embedCode"
                         style="color: #e2e8f0; font-size: 13px; margin: 0; white-space: pre-wrap; word-break: break-all; font-family: 'Fira Code', monospace;"><code>&lt;script&gt;
   window.ChatbotWidgetConfig = {
-    apiUrl: '{{ $serverUrl }}/api/chat/send',
     apiKey: '{{ $website->api_key }}',
-    serverUrl: '{{ $serverUrl }}',
-    logoUrl: '{{ $serverUrl }}/images/chatbot-logo.png'
+    serverUrl: '{{ $serverUrl }}'
   };
 &lt;/script&gt;
 &lt;script src="{{ $serverUrl }}/widget/widget-loader.js"&gt;&lt;/script&gt;</code></pre>

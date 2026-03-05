@@ -9,7 +9,7 @@ class Website extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'name', 'domain', 'api_key', 'welcome_message', 'widget_color', 'is_active'];
+    protected $fillable = ['user_id', 'name', 'domain', 'api_key', 'welcome_message', 'widget_color', 'widget_color_type', 'widget_position', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',

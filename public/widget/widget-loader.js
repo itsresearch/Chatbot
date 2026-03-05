@@ -5,10 +5,8 @@
  * Usage:
  * <script>
  *   window.ChatbotWidgetConfig = {
- *     apiUrl: 'https://your-domain.com/api/chat/send',
  *     apiKey: 'your-api-key',
- *     serverUrl: 'https://your-domain.com',
- *     logoUrl: 'https://your-domain.com/images/chatbot-logo.png'
+ *     serverUrl: 'https://your-domain.com'
  *   };
  * </script>
  * <script src="https://your-domain.com/widget/widget-loader.js"></script>

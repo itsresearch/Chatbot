@@ -63,6 +63,35 @@ class User extends Authenticatable
     }
 
     /**
+     * Get website IDs filtered by the currently active website in session.
+     * Returns all website IDs when no website is specifically selected.
+     */
+    public function activeWebsiteIds(): array
+    {
+        $activeId = (int) session('active_website_id', 0);
+
+        if ($activeId && $this->websites()->where('id', $activeId)->exists()) {
+            return [$activeId];
+        }
+
+        return $this->websiteIds();
+    }
+
+    /**
+     * Get the currently active website model, or null if "All" is selected.
+     */
+    public function activeWebsite()
+    {
+        $activeId = (int) session('active_website_id', 0);
+
+        if ($activeId) {
+            return $this->websites()->where('id', $activeId)->first();
+        }
+
+        return null;
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<int, string>

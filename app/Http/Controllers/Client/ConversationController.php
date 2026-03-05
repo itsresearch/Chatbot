@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Services\ConversationService;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,7 @@ class ConversationController extends Controller
 
     public function index()
     {
-        $websiteIds = auth()->user()->websiteIds();
+        $websiteIds = auth()->user()->activeWebsiteIds();
         $conversations = $this->conversationService->getConversations($websiteIds);
 
         if ($conversations->isNotEmpty()) {
@@ -25,7 +26,7 @@ class ConversationController extends Controller
 
     public function conversationsList()
     {
-        $websiteIds = auth()->user()->websiteIds();
+        $websiteIds = auth()->user()->activeWebsiteIds();
         return response()->json($this->conversationService->conversationsListData($websiteIds));
     }
 
@@ -36,7 +37,7 @@ class ConversationController extends Controller
         $conversation->update(['admin_viewed_at' => now()]);
         $conversation->load(['messages', 'visitor', 'website']);
 
-        $websiteIds = auth()->user()->websiteIds();
+        $websiteIds = auth()->user()->activeWebsiteIds();
         $conversations = $this->conversationService->getConversations($websiteIds);
 
         return view('client.conversations.show', compact('conversation', 'conversations'));
@@ -72,9 +73,20 @@ class ConversationController extends Controller
     {
         $this->authorizeConversation($conversation);
 
-        $validated = $request->validate(['message' => 'required|string']);
+        $request->validate([
+            'message' => 'nullable|string',
+            'file' => 'nullable|file|max:10240|mimes:' . implode(',', Message::allowedExtensions()),
+        ]);
+
+        if (!$request->message && !$request->hasFile('file')) {
+            return response()->json(['error' => 'A message or file is required.'], 422);
+        }
+
         $message = $this->conversationService->sendAdminMessage(
-            $conversation, $validated['message'], $request->user()->id
+            $conversation,
+            $request->message,
+            $request->user()->id,
+            $request->file('file')
         );
 
         return response()->json([

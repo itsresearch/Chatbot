@@ -30,6 +30,8 @@ class WebsiteController extends Controller
             'domain' => 'required|string|max:255|unique:websites,domain',
             'welcome_message' => 'nullable|string|max:500',
             'widget_color' => 'nullable|string|max:7',
+            'widget_color_type' => 'nullable|string|in:gradient,plain',
+            'widget_position' => 'nullable|string|in:bottom-right,bottom-left',
         ]);
 
         $website = auth()->user()->websites()->create([
@@ -38,6 +40,8 @@ class WebsiteController extends Controller
             'api_key' => Website::generateApiKey(),
             'welcome_message' => $validated['welcome_message'] ?? 'Hi there! How can I help you today?',
             'widget_color' => $validated['widget_color'] ?? '#ff7a18',
+            'widget_color_type' => $validated['widget_color_type'] ?? 'gradient',
+            'widget_position' => $validated['widget_position'] ?? 'bottom-right',
         ]);
 
         return redirect()->route('client.websites.show', $website)
@@ -69,6 +73,8 @@ class WebsiteController extends Controller
             'domain' => 'required|string|max:255|unique:websites,domain,' . $website->id,
             'welcome_message' => 'nullable|string|max:500',
             'widget_color' => 'nullable|string|max:7',
+            'widget_color_type' => 'nullable|string|in:gradient,plain',
+            'widget_position' => 'nullable|string|in:bottom-right,bottom-left',
         ]);
 
         $website->update($validated);

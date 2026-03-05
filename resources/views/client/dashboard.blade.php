@@ -11,7 +11,13 @@
         <div>
             <h1 class="h3 mb-1 fw-bold" style="color: var(--text-main);">Welcome back, {{ auth()->user()->name }}</h1>
             <p class="mb-0" style="color: var(--text-muted); font-size: 14px;">
-                Here's an overview of your chatbot activity.
+                @if (auth()->user()->activeWebsite())
+                    Showing data for <strong
+                        style="color: var(--primary);">{{ auth()->user()->activeWebsite()->name }}</strong>.
+                    Switch websites from the header.
+                @else
+                    Here's an overview of your chatbot activity across all websites.
+                @endif
             </p>
         </div>
         <a href="{{ route('client.websites.create') }}" class="btn btn-primary btn-sm">

@@ -6,6 +6,8 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Events\MessageSent;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Shared conversation logic used by both SuperAdmin & Client controllers (DRY).
@@ -87,16 +89,29 @@ class ConversationService
     }
 
     /**
-     * Admin sends a message in a conversation.
+     * Admin sends a message in a conversation, optionally with a file.
      */
-    public function sendAdminMessage(Conversation $conversation, string $messageText, int $userId): Message
+    public function sendAdminMessage(Conversation $conversation, ?string $messageText, int $userId, ?UploadedFile $file = null): Message
     {
-        $message = Message::create([
+        $fileData = [];
+        if ($file) {
+            $folder = 'chat_files/' . $conversation->id;
+            $storedPath = $file->store($folder, 'private');
+
+            $fileData = [
+                'file_path' => $storedPath,
+                'file_name' => $file->getClientOriginalName(),
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+            ];
+        }
+
+        $message = Message::create(array_merge([
             'conversation_id' => $conversation->id,
             'sender_type' => 'admin',
             'sender_id' => $userId,
-            'message' => $messageText,
-        ]);
+            'message' => $messageText ?? ($file ? '📎 ' . $file->getClientOriginalName() : ''),
+        ], $fileData));
 
         $conversation->update([
             'status' => 'human',

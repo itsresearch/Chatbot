@@ -7,7 +7,12 @@ use App\Models\Website;
 use App\Models\Visitor;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\ChatbotCategory;
+use App\Models\ChatbotService;
+use App\Models\ChatbotSubService;
 use App\Events\MessageSent;
+use App\Events\NewVisitorMessage;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
@@ -16,8 +21,14 @@ class ChatController extends Controller
         $request->validate([
             'api_key' => 'required|string',
             'visitor_token' => 'required|string',
-            'message' => 'required|string',
+            'message' => 'nullable|string',
+            'file' => 'nullable|file|max:10240|mimes:' . implode(',', Message::allowedExtensions()),
         ]);
+
+        // At least a message or file must be present
+        if (!$request->message && !$request->hasFile('file')) {
+            return response()->json(['error' => 'A message or file is required.'], 422);
+        }
 
         $website = Website::where('api_key', $request->api_key)->where('is_active', true)->first();
         if (!$website) {
@@ -41,12 +52,27 @@ class ChatController extends Controller
             ]
         );
 
+        //  Handle file upload
+        $fileData = [];
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $folder = 'chat_files/' . $conversation->id;
+            $storedPath = $file->store($folder, 'private');
+
+            $fileData = [
+                'file_path' => $storedPath,
+                'file_name' => $file->getClientOriginalName(),
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+            ];
+        }
+
         //  Save visitor message
-        $visitorMessage = Message::create([
+        $visitorMessage = Message::create(array_merge([
             'conversation_id' => $conversation->id,
             'sender_type' => 'visitor',
-            'message' => $request->message
-        ]);
+            'message' => $request->message ?? ($fileData ? '📎 ' . ($fileData['file_name'] ?? 'File') : ''),
+        ], $fileData));
 
         //  Broadcast visitor message
         try {
@@ -55,14 +81,24 @@ class ChatController extends Controller
             // Broadcasting may fail if Reverb isn't running — non-critical
         }
 
+        //  Notify the website owner in real-time (private channel)
+        try {
+            $ownerId = $website->user_id;
+            if ($ownerId) {
+                broadcast(new NewVisitorMessage($visitorMessage, $ownerId));
+            }
+        } catch (\Exception $e) {
+            // Non-critical — polling fallback will still work
+        }
+
         //  Update last_message_at
         $conversation->update(['last_message_at' => now()]);
 
         //  Only return newly created messages (not the entire history)
         $newMessages = [$visitorMessage];
 
-        //  Bot replies only when admin hasn't taken over
-        if ($conversation->status !== 'human') {
+        //  Bot replies only when admin hasn't taken over and there's text to process
+        if ($conversation->status !== 'human' && $request->message) {
             $botResponse = $this->generateBotReply(strtolower($request->message));
 
             $botMessage = Message::create([
@@ -196,6 +232,150 @@ class ChatController extends Controller
             'name' => $website->name,
             'welcome_message' => $website->welcome_message,
             'widget_color' => $website->widget_color,
+            'widget_color_type' => $website->widget_color_type ?? 'gradient',
+            'widget_position' => $website->widget_position ?? 'bottom-right',
+            'has_knowledge_base' => ChatbotCategory::forWebsite($website->id)->exists(),
         ]);
+    }
+
+    /* ================================================================
+     *  Knowledge Base API — Categories / Services / Sub-services
+     * ================================================================ */
+
+    /**
+     * Fetch active categories for a website.
+     */
+    public function getCategories(Request $request)
+    {
+        $request->validate(['api_key' => 'required|string']);
+
+        $website = $this->resolveWebsite($request->api_key);
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
+
+        $categories = ChatbotCategory::forWebsite($website->id)
+            ->orderBy('name')
+            ->select('id', 'name', 'description')
+            ->get();
+
+        return response()->json(['categories' => $categories]);
+    }
+
+    /**
+     * Fetch active services under a category.
+     */
+    public function getServices(Request $request)
+    {
+        $request->validate([
+            'api_key'     => 'required|string',
+            'category_id' => 'required|integer',
+        ]);
+
+        $website = $this->resolveWebsite($request->api_key);
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
+
+        // Verify category belongs to this website
+        $category = ChatbotCategory::where('id', $request->category_id)
+            ->where('website_id', $website->id)
+            ->first();
+
+        if (!$category) {
+            return response()->json(['error' => 'Category not found'], 404);
+        }
+
+        $services = $category->services()
+            ->orderBy('name')
+            ->select('id', 'category_id', 'name', 'description')
+            ->get();
+
+        return response()->json([
+            'category' => [
+                'id'   => $category->id,
+                'name' => $category->name,
+            ],
+            'services' => $services,
+        ]);
+    }
+
+    /**
+     * Fetch active sub-services under a service.
+     */
+    public function getSubServices(Request $request)
+    {
+        $request->validate([
+            'api_key'    => 'required|string',
+            'service_id' => 'required|integer',
+        ]);
+
+        $website = $this->resolveWebsite($request->api_key);
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
+
+        $service = ChatbotService::where('id', $request->service_id)
+            ->whereHas('category', fn ($q) => $q->where('website_id', $website->id))
+            ->first();
+
+        if (!$service) {
+            return response()->json(['error' => 'Service not found'], 404);
+        }
+
+        $subServices = $service->subServices()
+            ->orderBy('name')
+            ->select('id', 'service_id', 'name', 'short_description')
+            ->get();
+
+        return response()->json([
+            'service' => [
+                'id'   => $service->id,
+                'name' => $service->name,
+            ],
+            'sub_services' => $subServices,
+        ]);
+    }
+
+    /**
+     * Fetch full detail/description of a sub-service.
+     */
+    public function getSubServiceDetail(Request $request)
+    {
+        $request->validate([
+            'api_key'        => 'required|string',
+            'sub_service_id' => 'required|integer',
+        ]);
+
+        $website = $this->resolveWebsite($request->api_key);
+        if (!$website) {
+            return response()->json(['error' => 'Invalid API key'], 403);
+        }
+
+        $subService = ChatbotSubService::where('id', $request->sub_service_id)
+            ->whereHas('service.category', fn ($q) => $q->where('website_id', $website->id))
+            ->first();
+
+        if (!$subService) {
+            return response()->json(['error' => 'Sub-service not found'], 404);
+        }
+
+        return response()->json([
+            'sub_service' => [
+                'id'                => $subService->id,
+                'name'              => $subService->name,
+                'short_description' => $subService->short_description,
+                'detail_content'    => $subService->detail_content,
+            ],
+        ]);
+    }
+
+    /* ── Helpers ──────────────────────────────────── */
+
+    private function resolveWebsite(string $apiKey): ?Website
+    {
+        return Website::where('api_key', $apiKey)
+            ->where('is_active', true)
+            ->first();
     }
 }

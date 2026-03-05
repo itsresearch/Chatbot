@@ -27,24 +27,44 @@
         }
 
         :root {
+            /* Brand */
             --primary: #f97316;
             --primary-dark: #ea580c;
             --primary-light: #fb923c;
             --primary-soft: rgba(249, 115, 22, 0.10);
             --primary-gradient: linear-gradient(135deg, #ff8c42 0%, #f97316 50%, #ea580c 100%);
+
+            /* Light theme (default) */
+            --surface-bg: #faf5f0;
             --surface: #ffffff;
             --surface-elevated: #ffffff;
             --surface-soft: #fef7f0;
-            --surface-bg: #faf5f0;
             --border-subtle: #f3e8de;
             --border-light: #fde8d0;
-            --text-main: #1e293b;
-            --text-secondary: #475569;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
             --text-muted: #94a3b8;
             --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #fef7f0 100%);
-            --shadow-sm: 0 1px 3px rgba(249, 115, 22, 0.06);
-            --shadow-md: 0 4px 16px rgba(249, 115, 22, 0.08);
-            --shadow-lg: 0 8px 32px rgba(249, 115, 22, 0.10);
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+            --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        /* Dark theme overrides */
+        body.theme-dark {
+            --surface-bg: rgb(16, 16, 16);
+            --surface: rgb(24, 24, 24);
+            --surface-elevated: rgb(38, 38, 38);
+            --surface-soft: rgb(24, 24, 24);
+            --border-subtle: #27272a;
+            --border-light: #3f3f46;
+            --text-main: #f9fafb;
+            --text-secondary: #e5e7eb;
+            --text-muted: #9ca3af;
+            --sidebar-bg: linear-gradient(180deg, rgb(16, 16, 16) 0%, rgb(24, 24, 24) 100%);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
         }
 
         body {
@@ -134,6 +154,10 @@
             z-index: 100;
             display: flex;
             align-items: center;
+        }
+
+        body.theme-dark .navbar {
+            background: rgba(16, 16, 16, 0.95);
         }
 
         .navbar-brand {
@@ -503,7 +527,7 @@
             margin-bottom: 16px;
             display: flex;
             width: 100%;
-            animation: slideIn 0.3s ease;
+            animation: slideIn 0.25s ease-out;
         }
 
         @keyframes slideIn {
@@ -528,10 +552,10 @@
 
         .message-content {
             display: inline-block;
-            max-width: 60%;
+            max-width: 64%;
             min-width: 40px;
-            padding: 12px 18px;
-            border-radius: 20px;
+            padding: 10px 16px;
+            border-radius: 18px;
             word-wrap: break-word;
             white-space: normal;
             font-size: 14px;
@@ -539,7 +563,7 @@
         }
 
         .visitor-message .message-content {
-            background-color: #ffffff;
+            background-color: var(--surface);
             color: var(--text-main);
             border: 1px solid var(--border-subtle);
             border-bottom-left-radius: 6px;
@@ -738,6 +762,115 @@
         .sidebar-overlay.show {
             display: block;
         }
+
+        /* Dark theme specific tweaks */
+        body.theme-dark .card,
+        body.theme-dark .chat-window,
+        body.theme-dark .dropdown-menu {
+            background: var(--surface-elevated);
+        }
+
+        body.theme-dark .chat-messages {
+            background: radial-gradient(circle at top left, #27272f 0%, #101010 45%, #000000 100%);
+        }
+
+        body.theme-dark .chat-item:hover {
+            background-color: #18181b;
+        }
+
+        body.theme-dark .chat-item.chat-item-unread {
+            background-color: rgba(249, 115, 22, 0.18);
+        }
+
+        body.theme-dark .chat-input-area input {
+            background-color: #18181b;
+            border-color: #27272a;
+            color: var(--text-main);
+        }
+
+        body.theme-dark .chat-input-area input::placeholder {
+            color: var(--text-muted);
+        }
+
+        body.theme-dark ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+        }
+
+        body.theme-dark ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
+
+        body.theme-dark .search-input:focus {
+            background-color: var(--surface-elevated);
+        }
+
+        body.theme-dark .form-control {
+            background-color: var(--surface-elevated);
+            border-color: var(--border-subtle);
+            color: var(--text-main);
+        }
+
+        body.theme-dark .form-control:focus {
+            background-color: var(--surface);
+            border-color: var(--primary);
+            color: var(--text-main);
+        }
+
+        body.theme-dark .table {
+            background: var(--surface-elevated) !important;
+            color: var(--text-main);
+            --bs-table-bg: var(--surface-elevated);
+            --bs-table-color: var(--text-main);
+            --bs-table-striped-bg: var(--surface);
+            --bs-table-hover-bg: var(--surface);
+            --bs-table-hover-color: var(--text-main);
+            --bs-table-border-color: var(--border-subtle);
+        }
+
+        body.theme-dark .table thead {
+            background-color: var(--surface);
+            border-color: var(--border-subtle);
+        }
+
+        body.theme-dark .table thead th {
+            color: var(--text-secondary);
+            border-color: var(--border-subtle);
+        }
+
+        body.theme-dark .table td {
+            color: var(--text-secondary);
+            border-color: var(--border-subtle);
+        }
+
+        body.theme-dark .table-hover tbody tr:hover {
+            background-color: var(--surface);
+        }
+
+        body.theme-dark .stat-card {
+            background: var(--surface-elevated);
+            border-color: var(--border-subtle);
+        }
+
+        body.theme-dark .dropdown-item {
+            color: var(--text-secondary);
+        }
+
+        body.theme-dark .dropdown-item:hover {
+            background-color: var(--surface);
+            color: var(--text-main);
+        }
+
+        body.theme-dark .btn-outline-secondary {
+            border-color: var(--border-subtle);
+            color: var(--text-secondary);
+            background: var(--surface);
+        }
+
+        body.theme-dark .btn-outline-secondary:hover {
+            background: var(--surface-elevated);
+            border-color: var(--primary-light);
+            color: var(--primary);
+        }
     </style>
 
     @yield('extra-styles')
@@ -802,8 +935,13 @@
                 <span class="navbar-brand mb-0" style="margin: 0;">@yield('title', 'Dashboard')</span>
             </div>
 
-            <!-- Right Side: Profile Only -->
+            <!-- Right Side: Theme toggle + Profile -->
             <div class="d-flex align-items-center">
+                <button class="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center justify-content-center"
+                    id="theme-toggle" type="button" style="width: 38px; height: 32px; padding: 0;"
+                    aria-label="Toggle dark mode">
+                    <i class="bi bi-moon-stars" id="theme-toggle-icon" style="font-size: 16px;"></i>
+                </button>
                 <div class="dropdown">
                     <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none" type="button"
                         id="profileDropdown" data-bs-toggle="dropdown" style="padding: 4px;">
@@ -844,12 +982,51 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Sidebar Toggle Script -->
+    <!-- Sidebar & Theme Scripts -->
     <script>
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+        // --- Theme handling ---
+        function applyTheme(theme) {
+            const body = document.body;
+            if (theme === 'dark') {
+                body.classList.add('theme-dark');
+                if (themeToggleIcon) {
+                    themeToggleIcon.classList.remove('bi-moon-stars');
+                    themeToggleIcon.classList.add('bi-sun');
+                }
+            } else {
+                body.classList.remove('theme-dark');
+                if (themeToggleIcon) {
+                    themeToggleIcon.classList.remove('bi-sun');
+                    themeToggleIcon.classList.add('bi-moon-stars');
+                }
+            }
+        }
+
+        (function initTheme() {
+            const stored = window.localStorage.getItem('admin-theme');
+            const prefersDark = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = stored || (prefersDark ? 'dark' : 'light');
+            applyTheme(theme);
+        })();
+
+        themeToggle?.addEventListener('click', () => {
+            const isDark = document.body.classList.contains('theme-dark');
+            const next = isDark ? 'light' : 'dark';
+            applyTheme(next);
+            try {
+                window.localStorage.setItem('admin-theme', next);
+            } catch (e) {
+                // ignore storage issues
+            }
+        });
 
         if (window.innerWidth > 992) {
             sidebarToggle?.addEventListener('click', function() {

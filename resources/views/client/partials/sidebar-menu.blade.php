@@ -19,3 +19,12 @@
         <span class="sidebar-text">Conversations</span>
     </a>
 </li>
+
+<li class="menu-label" style="margin-top:8px;">Chatbot</li>
+<li>
+    <a href="{{ route('client.chatbot.categories.index') }}"
+        class="{{ request()->routeIs('client.chatbot.categories.*') || request()->routeIs('client.chatbot.services.*') || request()->routeIs('client.chatbot.sub-services.*') ? 'active' : '' }}">
+        <i class="bi bi-diagram-3-fill"></i>
+        <span class="sidebar-text">Categories & Services</span>
+    </a>
+</li>
