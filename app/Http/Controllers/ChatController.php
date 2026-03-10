@@ -174,6 +174,7 @@ class ChatController extends Controller
             'I want to make sure you get the best help possible. Let me transfer you to a human agent who can assist you further. 🤝',
             'This is beyond my capabilities. I\'m connecting you with a live support agent who will be able to help you better!',
         ];
+//to be fixed
 
         return ['message' => $redirectResponses[array_rand($redirectResponses)], 'redirect_to_human' => true];
     }

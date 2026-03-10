@@ -114,7 +114,7 @@
                 ".cb-header-img{width:36px;height:36px;object-fit:contain;display:block}" +
                 ".cb-header-img.error-img{display:none}" +
 
-                ".cb-panel{position:absolute;" + panelAlign + ";bottom:70px;width:380px;max-height:560px;background:#fff;border-radius:20px;box-shadow:0 18px 45px rgba(15,23,42,.35);display:flex;flex-direction:column;overflow:hidden;transform-origin:" + panelOrigin + ";transform:scale(.95);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}" +
+                ".cb-panel{position:absolute;" + panelAlign + ";bottom:70px;width:380px;height:560px;background:#fff;border-radius:20px;box-shadow:0 18px 45px rgba(15,23,42,.35);display:flex;flex-direction:column;overflow:hidden;transform-origin:" + panelOrigin + ";transform:scale(.95);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}" +
                 ".cb-panel.cb-open{opacity:1;transform:scale(1);pointer-events:auto}" +
 
                 ".cb-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:" + headerBg + ";color:#fff;flex-shrink:0}" +
@@ -122,6 +122,8 @@
                 ".cb-header-logo{width:40px;height:40px;display:flex;align-items:center;justify-content:center}" +
                 ".cb-header-title{font-size:15px;font-weight:600}" +
                 ".cb-header-subtitle{font-size:12px;opacity:.85}" +
+                ".cb-header-back{background:transparent;border:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;font-size:18px;padding:0;margin-right:4px;opacity:.9;transition:opacity .15s}" +
+                ".cb-header-back:hover{opacity:1}" +
                 ".cb-header-close{background:transparent;border:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;font-size:20px;font-weight:bold;padding:0}" +
 
                 ".cb-breadcrumb{display:flex;align-items:center;gap:4px;padding:8px 14px;background:" + BRAND_BACKGROUND + ";border-bottom:1px solid #f3e8de;font-size:12px;color:#6b7280;flex-shrink:0;flex-wrap:wrap}" +
@@ -193,11 +195,15 @@
                 ".cb-loader-spinner{width:24px;height:24px;border:3px solid #f3e8de;border-top-color:" + BRAND_PRIMARY + ";border-radius:50%;animation:cb-spin .7s linear infinite;margin:0 auto 8px}" +
                 "@keyframes cb-spin{to{transform:rotate(360deg)}}" +
 
+                ".cb-powered{display:flex;align-items:center;justify-content:center;padding:8px 0;border-top:1px solid #e5e7eb;background:#fff;flex-shrink:0;font-size:12px;color:#9ca3af}" +
+                ".cb-powered a{color:#1e293b;font-weight:600;text-decoration:none;margin-left:4px}" +
+                ".cb-powered a:hover{text-decoration:underline}" +
+
                 ".cb-empty{text-align:center;padding:30px 14px;color:#9ca3af}" +
                 ".cb-empty-icon{font-size:36px;margin-bottom:8px}" +
                 ".cb-empty-text{font-size:13px}" +
 
-                "@media(max-width:480px){.cb-panel{width:100vw;" + panelAlign + ";bottom:0;max-height:100vh;border-radius:0}.cb-widget-root{inset:" + mobileInset + "}}";
+                "@media(max-width:480px){.cb-panel{width:100vw;" + panelAlign + ";bottom:0;height:100vh;border-radius:0}.cb-widget-root{inset:" + mobileInset + "}}";
 
             document.head.appendChild(style);
         }
@@ -236,6 +242,9 @@
                 '</button>' +
                 '<section class="cb-panel" id="cb-panel" aria-label="Chatbot widget" aria-hidden="true">' +
                     '<header class="cb-header">' +
+                        '<button class="cb-header-back" type="button" id="cb-back" aria-label="Go back" style="display:none;">' +
+                            '<i class="bi bi-chevron-left"></i>' +
+                        '</button>' +
                         '<div class="cb-header-main">' +
                             '<div class="cb-header-logo">' +
                                 (LOGO_URL ? '<img src="' + LOGO_URL + '" alt="" class="cb-header-img" />' : "\uD83D\uDCAC") +
@@ -259,6 +268,7 @@
                             '</button>' +
                         '</div>'
                     : "") +
+                    '<div class="cb-powered">Powered by <a href="https://www.devkotaresearch.com.np/" target="_blank" rel="noopener noreferrer">Miraai</a></div>' +
                 '</section>';
 
             document.body.appendChild(root);
@@ -266,6 +276,7 @@
             var panel = document.getElementById("cb-panel");
             var launcher = document.getElementById("cb-launcher");
             var closeBtn = document.getElementById("cb-close");
+            var backBtn = document.getElementById("cb-back");
             var body = document.getElementById("cb-body");
             var breadcrumb = document.getElementById("cb-breadcrumb");
             var bottomNav = document.getElementById("cb-bottom-nav");
@@ -310,6 +321,25 @@
             closeBtn.addEventListener("click", function () { togglePanel(false); });
 
             /* ════════════════════════════════════════
+             *  Back button — go one step back in KB
+             * ════════════════════════════════════════ */
+            function updateBackButton() {
+                if (currentView === "kb" && kbStack.length > 1) {
+                    backBtn.style.display = "flex";
+                } else {
+                    backBtn.style.display = "none";
+                }
+            }
+
+            backBtn.addEventListener("click", function () {
+                if (currentView === "kb" && kbStack.length > 1) {
+                    kbStack.pop();
+                    var prev = kbStack.pop();
+                    navigateKB(prev.type, prev.data);
+                }
+            });
+
+            /* ════════════════════════════════════════
              *  Bottom nav switching
              * ════════════════════════════════════════ */
             if (bottomNav) {
@@ -346,9 +376,11 @@
             function updateBreadcrumb() {
                 if (!HAS_KNOWLEDGE_BASE || currentView !== "kb") {
                     breadcrumb.style.display = "none";
+                    updateBackButton();
                     return;
                 }
                 breadcrumb.style.display = "flex";
+                updateBackButton();
                 var html = "";
                 kbStack.forEach(function (item, idx) {
                     if (idx > 0) html += '<span class="cb-breadcrumb-sep">\u203A</span>';
@@ -500,6 +532,7 @@
              * ════════════════════════════════════════ */
             function showChatView() {
                 breadcrumb.style.display = "none";
+                backBtn.style.display = "none";
 
                 body.innerHTML = '<div class="cb-messages" id="cb-messages" role="log" aria-live="polite"></div>';
 
@@ -522,8 +555,11 @@
                         '</button>' +
                     '</form>';
 
+                var poweredDiv = panel.querySelector(".cb-powered");
                 if (bottomNav) {
                     bottomNav.insertAdjacentHTML("beforebegin", inputHtml);
+                } else if (poweredDiv) {
+                    poweredDiv.insertAdjacentHTML("beforebegin", inputHtml);
                 } else {
                     panel.insertAdjacentHTML("beforeend", inputHtml);
                 }
