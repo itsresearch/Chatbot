@@ -9,7 +9,7 @@
         const LOGO_URL = (window.ChatbotWidgetConfig && window.ChatbotWidgetConfig.logoUrl) || SERVER_URL + "/images/chatbot-logo.png";
 
         let BRAND_PRIMARY = "#ff7a18";
-        let BRAND_PRIMARY_DARK = "#e8620b";
+        let BRAND_PRIMARY_DARK = "#e8620b"; 
         let BRAND_BACKGROUND = "#fff3e0";
         let WELCOME_MESSAGE = "Hi there! How can I help you today?";
         let HAS_KNOWLEDGE_BASE = false;
