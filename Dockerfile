@@ -12,6 +12,9 @@ RUN npm run build
 FROM php:8.2-cli-alpine
 WORKDIR /var/www/html
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
+
 RUN apk add --no-cache \
   bash \
   git \
@@ -35,7 +38,7 @@ RUN composer install \
   --no-interaction \
   --no-progress \
   --prefer-dist \
-  --optimize-autoloader \
+  --no-ansi \
   --no-scripts
 
 COPY . .
