@@ -9,22 +9,12 @@ COPY public ./public
 COPY vite.config.js postcss.config.js tailwind.config.js ./
 RUN npm run build
 
-FROM composer:2 AS vendor-builder
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install \
-  --no-dev \
-  --no-interaction \
-  --no-progress \
-  --prefer-dist \
-  --optimize-autoloader
-
 FROM php:8.2-cli-alpine
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
   bash \
+  git \
   libzip-dev \
   oniguruma-dev \
   mysql-client \
@@ -39,8 +29,16 @@ RUN apk add --no-cache \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+COPY composer.json composer.lock ./
+RUN composer install \
+  --no-dev \
+  --no-interaction \
+  --no-progress \
+  --prefer-dist \
+  --optimize-autoloader \
+  --no-scripts
+
 COPY . .
-COPY --from=vendor-builder /app/vendor ./vendor
 COPY --from=frontend-builder /app/public/build ./public/build
 
 RUN chmod +x /var/www/html/start.sh \

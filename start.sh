@@ -6,6 +6,9 @@ echo "[start] Booting Laravel application"
 # Railway injects env vars at runtime. Clear old caches so Laravel reads fresh values.
 php artisan optimize:clear
 
+echo "[start] Discovering packages"
+php artisan package:discover --ansi
+
 if [ "${DB_CONNECTION:-}" = "mysql" ]; then
 	: "${DB_HOST:?DB_HOST is required when DB_CONNECTION=mysql}"
 	: "${DB_PORT:?DB_PORT is required when DB_CONNECTION=mysql}"
